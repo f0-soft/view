@@ -19,7 +19,7 @@ var log = process.env.DEBUG ? console.log : function() {};
 
 var async = require( 'async' );
 
-var Flexo = require( 'flexo' );
+var Flexo = require( 'f0.flexo' );
 var flexoContainer;
 var View;
 var tj_ids, t_ids;
