@@ -1,342 +1,479 @@
 'use strict';
 
 /*
- Перед запуском провести установку зависимостей `npm install`
- Для работы требует `flexo` (которому требуются `collectioner` и `rabbit`), который надо поместить в `node_modules` на уровне package.json
+ Для запуска требуется установка `nodeunit` через `npm -g i nodeunit`
+ Перед запуском провести установку зависимостей `npm install` (требуется `f0.argstype`)
+ Для тестов с настоящим `rabbit`, надо ниже закомментировать строку `mock = true;` 
  Перед запуском с настоящим `rabbit` следует очистить коллекции `test` и `test_join` 
- Для тестов с настоящим `rabbit`, надо ниже в переменной `flexoConfig` заменить значение mock на `false`
- Тест запускать через `node test/index.js`
+
+ Запуск теста:
+ nodeunit test/index.js
+
+ Очистка mongo и redis: 
+ mongo --eval 'db.testBill.remove(); db.testAttachment.remove(); db.testContract.remove();' && redis-cli FLUSHALL
  */
 
-var flexoConfig = { mock: true };
-
-
-
+var mock;
+//mock = true;
 //process.env.DEBUG = true;
-
-var log = process.env.DEBUG ? console.log : function() {};
-
+var log = function() {};
+if ( process.env.DEBUG ) { log = console.log; }
 
 var async = require( 'async' );
+var INIT;
 
+var Rabbit = mock ? require( '../node_modules/f0.flexo/mock/storage' ) : require( 'f0.rabbit' );
 var Flexo = require( 'f0.flexo' );
-var flexoContainer;
-var View;
-var tj_ids, t_ids;
+var View = require( '../' );
 
-function rnd() {
-	return (Math.random() * 10000).toString( 10 );
+var storageConfig = {
+	gPath: {
+		'bill-contract': [
+			[ 'testContract', '_id' ],
+			[ 'testAttachment', 'contract_id' ]
+		]
+	},
+	gFieldDepPath: {
+		testBill: {
+			attachment_id: [ 'bill-contract', 'testAttachment' ]
+		}
+	}
+};
+var provider, providerConfig = {
+	storage: undefined,
+	schemes: {
+		testBill: {
+			scheme: require( '../node_modules/f0.flexo/test.schemes/testBill' ),
+			dict: {
+				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id', '_path' ],
+				mutable: [ 'date', 'attachment_id' ],
+				joinProperties: [],
+				joins: [],
+				types: {
+					_id: { type: 'id' },
+					tsCreate: { type: 'number' },
+					tsUpdate: { type: 'number' },
+					date: { type: 'number' },
+					attachment_id: { type: 'array', of: 'id', from: 'testAttachment', link: 'bill-manager' },
+					_path: { type: 'array' }
+				}
+			}
+		},
+		testAttachment: {
+			scheme: require( '../node_modules/f0.flexo/test.schemes/testAttachment' ),
+			dict: {
+				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id', '_path' ],
+				mutable: [ 'date', 'index', 'contract_id' ],
+				joinProperties: [],
+				joins: [],
+				types: {
+					_id: { type: 'id' },
+					tsCreate: { type: 'number' },
+					tsUpdate: { type: 'number' },
+					date: { type: 'number' },
+					index: { type: 'string' },
+					contract_id: { type: 'id', from: 'testContract', link: 'bill-manager' },
+					_path: { type: 'array' }
+				}
+			}
+		},
+		testContract: {
+			scheme: require( '../node_modules/f0.flexo/test.schemes/testContract' ),
+			dict: {
+				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id', '_path' ],
+				mutable: [ 'date', 'index', 'customer_id' ],
+				joinProperties: [],
+				joins: [],
+				types: {
+					_id: { type: 'id' },
+					tsCreate: { type: 'number' },
+					tsUpdate: { type: 'number' },
+					date: { type: 'number' },
+					index: { type: 'string' },
+					customer_id: { type: 'id', from: 'testCustomer', link: 'bill-manager' },
+					_path: { type: 'array' }
+				}
+			}
+		}
+	}
+};
+
+var view, viewConfig = {
+	provider: undefined,
+	views: {
+		test: {
+			view: require( '../test.views/test.js' ),
+			vids: {
+				'01': [ 'testBill', '_id' ],
+				'02': [ 'testBill', 'tsCreate' ],
+				'03': [ 'testBill', 'tsUpdate' ],
+				'04': [ 'testBill', 'date' ],
+				'05': [ 'testBill', 'attachment_id' ],
+				'06': [ 'testAttachment', '_id', 'attachment_id', 'bill-contract' ],
+				'07': [ 'testAttachment', 'tsCreate', 'attachment_id', 'bill-contract' ],
+				'08': [ 'testAttachment', 'tsUpdate', 'attachment_id', 'bill-contract' ],
+				'09': [ 'testAttachment', 'date', 'attachment_id', 'bill-contract' ],
+				'10': [ 'testAttachment', 'index', 'attachment_id', 'bill-contract' ],
+				'11': [ 'testAttachment', 'contract_id', 'attachment_id', 'bill-contract' ],
+				'12': [ 'testContract', '_id', 'attachment_id', 'bill-contract' ],
+				'13': [ 'testContract', 'tsCreate', 'attachment_id', 'bill-contract' ],
+				'14': [ 'testContract', 'tsUpdate', 'attachment_id', 'bill-contract' ],
+				'15': [ 'testContract', 'date', 'attachment_id', 'bill-contract' ],
+				'16': [ 'testContract', 'index', 'attachment_id', 'bill-contract' ],
+				'17': [ 'testContract', 'customer_id', 'attachment_id', 'bill-contract' ]
+			}
+		}
+	},
+	paths: {
+		'bill-contract': [
+			[ 'testContract', '_id' ],
+			[ 'testAttachment', 'contract_id' ]
+		]
+	},
+	templatePath: __dirname + '/../test.templates/',
+	templateTimeout: 100
+};
+
+var f1 = { scheme: 'testBill', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id', '_path' ] };
+var f2 = { scheme: 'testAttachment', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id', '_path' ] };
+var f3 = { scheme: 'testContract', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id', '_path' ] };
+
+var name = 'test';
+var allVids = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17' ];
+var options = { insert_user_id: false, user_id: '1', role: 'manager' };
+
+var f1data = [];
+var f2data = [];
+var f3data = [];
+
+function rnd( min, max ) {
+	return Math.floor( Math.random() * (max - min) + min );
 }
 
-var viewFields = {
-	test: ['name', 'inn', 'comment', 'join_id', 'array_of_id', 'test_join_name', 'test_join_inn', 'test_join_comment'],
-	test_join: ['name', 'inn', 'comment', 'array_of_id']
+
+
+exports['setUp'] = function( callback ) {
+	if ( INIT ) {
+		return callback();
+	}
+
+	return async.series( [
+		function( cb ) { // init storage
+			Rabbit.init( storageConfig, function( err ) {
+				if ( err ) { return cb( err ); }
+
+				providerConfig.storage = {
+					find: Rabbit.find,
+					insert: Rabbit.insert,
+					modify: Rabbit.modify,
+					delete: Rabbit.delete
+				};
+
+				return cb();
+			} );
+		},
+		function( cb ) { // init provider
+			Flexo.init( providerConfig, function( err, module ) {
+				if ( err ) { return cb( err ); }
+
+				viewConfig.provider = module;
+				provider = module;
+
+				return cb();
+			} );
+		},
+		function( cb ) { // Check `testBill` is empty
+			provider.find( f1.scheme, f1.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+				if ( err ) { return cb( err ); }
+
+				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+
+				return cb();
+			} );
+		},
+		function( cb ) { // Check `testAttachment` is empty
+			provider.find( f2.scheme, f2.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+				if ( err ) { return cb( err ); }
+
+				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+
+				return cb();
+			} );
+		},
+		function( cb ) { // Check `testContract` is empty
+			provider.find( f3.scheme, f3.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+				if ( err ) { return cb( err ); }
+
+				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+
+				return cb();
+			} );
+		},
+		function( cb ) { // Insert test data into `testContract`
+			provider.insert( f3.scheme, f3.fields, [
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() }
+			], {}, function( err, data ) {
+				var i;
+
+				if ( err ) { return cb( err ); }
+
+				if ( data.length !== 6 ) { return cb( new Error( 'Couldn\'t insert test data into `testContract`' ) ); }
+
+				for ( i = 0; i < data.length; i += 1 ) {
+					f3data.push( {_id: data[i]._id, tsUpdate: data[i].tsUpdate} );
+				}
+
+				return cb();
+			} );
+		},
+		function( cb ) { // Insert test data into `testAttachment`
+			provider.insert( f2.scheme, f2.fields, [
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[0]._id},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[1]._id},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[2]._id},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[3]._id},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[4]._id},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[5]._id}
+			], {}, function( err, data ) {
+				var i;
+
+				if ( err ) { return cb( err ); }
+
+				if ( data.length !== 6 ) { return cb( new Error( 'Couldn\'t insert test data into `testAttachment`' ) ); }
+
+				for ( i = 0; i < data.length; i += 1 ) {
+					f2data.push( { _id: data[i]._id, tsUpdate: data[i].tsUpdate } );
+				}
+
+				return cb();
+			} );
+		}
+	], function( err ) {
+		INIT = true;
+		return callback( err );
+	} );
+};
+
+
+exports['Init View'] = function( t ) {
+	t.expect( 1 );
+
+	View.init( viewConfig, function( err, module ) {
+		t.ifError( err );
+		view = module;
+		t.done();
+	} );
+};
+
+exports['GetTemplate'] = function( t ) {
+	t.expect( 4 );
+
+	view.getTemplate( name, allVids, function( err, vids, config, template ) {
+		t.ifError( err );
+
+		t.ok( vids );
+		t.ok( config );
+		t.ok( template );
+
+		t.done();
+	} );
+};
+
+exports['Find empty'] = function( t ) {
+	t.expect( 6 );
+
+	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
+		t.ifError( err );
+
+		t.ok( data );
+		t.ok( Array.isArray( data ) );
+		t.doesNotThrow( function() {
+			t.strictEqual( data.length, 0 );
+		} );
+		t.strictEqual( count, 0 );
+
+		t.done();
+	} );
+};
+
+exports['Insert `test` view documents'] = function( t ) {
+	t.expect( 8 );
+
+	view.insert( name, allVids, [
+		{ '04': rnd( 1, 1000 ), '05': [ f2data[0]._id, f2data[2]._id, f2data[4]._id ] },
+		{ '04': rnd( 1, 1000 ), '05': [ f2data[1]._id, f2data[3]._id, f2data[5]._id ] },
+		{ '04': rnd( 1, 1000 ), '05': [ f2data[2]._id, f2data[4]._id, f2data[0]._id ] }
+	], options, function( err, data ) {
+		var i, dataVids = [];
+		t.ifError( err );
+
+		t.ok( data );
+		t.ok( Array.isArray( data ) );
+		t.doesNotThrow( function() {
+			t.strictEqual( data.length, 3 );
+			dataVids = Object.keys( data[0] );
+		} );
+
+		// returns root properties
+		t.notStrictEqual( dataVids.indexOf( '01' ), -1 );
+		t.notStrictEqual( dataVids.indexOf( '02' ), -1 );
+		// doesn't return join properties
+		t.strictEqual( dataVids.indexOf( '06' ), -1 );
+
+		for ( i = 0; i < data.length; i += 1 ) {
+			f1data.push( {'01': data[i]['01'], '03': data[i]['03'] } );
+		}
+
+		t.done();
+	} );
+};
+
+exports['Find inserted `test` view documents'] = function( t ) {
+	t.expect( 9 );
+
+	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
+		t.ifError( err );
+
+		t.ok( data );
+		t.ok( Array.isArray( data ) );
+		t.doesNotThrow( function() {
+			t.strictEqual( data.length, 3 );
+			t.strictEqual( data[0].length, 3 );
+			t.strictEqual( data[1].length, 6 );
+			t.strictEqual( data[2].length, 6 );
+		} );
+		t.strictEqual( count, 3 );
+
+		t.done();
+	} );
+};
+
+exports['Modify `test` view document'] = function( t ) {
+	t.expect( 6 );
+
+	view.modify( name, [
+		{ selector: f1data[0], properties: {'04': -999}}
+	], options, function( err, data ) {
+		t.ifError( err );
+
+
+		t.ok( data );
+		t.ok( Array.isArray( data ) );
+		t.doesNotThrow( function() {
+			t.strictEqual( data.length, 1 );
+			t.notStrictEqual( data[0]['03'], f1data[0]['03'] );
+		} );
+
+		t.done();
+	} )
+};
+
+exports['Find modified `test` view documents'] = function( t ) {
+	t.expect( 12 );
+
+	view.find( name, allVids, { selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data, count ) {
+		t.ifError( err );
+
+		t.ok( data );
+		t.ok( Array.isArray( data ) );
+		t.doesNotThrow( function() {
+			t.strictEqual( data.length, 3 );
+			t.strictEqual( data[0].length, 1 );
+			t.strictEqual( data[1].length, 3 );
+			t.strictEqual( data[2].length, 3 );
+			t.strictEqual( data[0][0]['01'], f1data[0]['01'] );
+			t.notStrictEqual( data[0][0]['03'], f1data[0]['03'] );
+			t.strictEqual( data[0][0]['04'], -999 );
+		} );
+		t.strictEqual( count, 1 );
+
+		t.done();
+	} );
+};
+
+exports['Delete `test` view docment'] = function( t ) {
+	t.expect( 7 );
+
+	view.delete( name, [ f1data[1] ], options, function( err, data ) {
+		t.ifError( err );
+
+		t.ok( data );
+		t.ok( Array.isArray( data ) );
+		t.doesNotThrow( function() {
+			t.strictEqual( data.length, 1 );
+			t.ok( data[0] );
+			t.strictEqual( data[0]['01'], f1data[1]['01'] );
+		} );
+
+		t.done();
+	} );
+};
+
+exports['Find deleted `test` view document'] = function( t ) {
+	t.expect( 11 );
+
+	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
+		t.ifError( err );
+
+		t.ok( data );
+		t.ok( Array.isArray( data ) );
+		t.doesNotThrow( function() {
+			t.strictEqual( data.length, 3 );
+			t.strictEqual( data[0].length, 2 );
+			t.strictEqual( data[1].length, 3 );
+			t.strictEqual( data[2].length, 3 );
+			t.notDeepEqual( data[0][0]['01'], f1data[1]['01'] );
+			t.notDeepEqual( data[0][1]['01'], f1data[1]['01'] );
+		} );
+		t.strictEqual( count, 2 );
+
+		t.done();
+	} );
 };
 
 
 
-var tasks = {
-	'Init Flexo': function( callback ) {
-		console.log( 'Init Flexo' );
-
-		try {
-			Flexo.init( flexoConfig, function( error ) {
-				if ( error ) {
-					callback( error );
-					return;
-				}
-
-				callback( null, Flexo );
-			} );
-		} catch ( e ) {
-			callback( e );
-		}
+/**
+ * Available test methods
+ */
+var t = {
+	expect: function( number ) { return number; },
+	ok: function( value, message ) {
+		if ( message ) {}
+		return value;
 	},
-
-	'Create Flexo': function( callback ) {
-		console.log( 'Create Flexo' );
-
-		try {
-			flexoContainer = {
-				test: new Flexo.Collection( { scheme: 'test', fields: ['name', 'inn', 'comment', 'join_id', 'array_of_id', 'test_join_name', 'test_join_inn', 'test_join_comment'] } ),
-				test_join: new Flexo.Collection( { scheme: 'test_join', fields: ['name', 'inn', 'comment', 'array_of_id'] } )
-			};
-		} catch ( e ) {
-			callback( e );
-			return;
-		}
-
-		callback( null, flexoContainer );
+	deepEqual: function( actual, expected, message ) {
+		if ( expected || message ) {}
+		return actual;
 	},
-
-	'Check Flexo `test` is empty': function( callback ) {
-		console.log( 'Check Flexo `test` is empty' );
-
-		flexoContainer.test.find( {selector: {}}, {all: true, count: true}, function( error, data, count ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.length !== 0 || count !== 0 ) {
-				callback( new Error( 'Collection `test` isn\'t empty, clean it first' ) );
-				return;
-			}
-
-			callback( null, {data: data, count: count} );
-		} );
+	notDeepEqual: function( actual, expected, message ) {
+		if ( expected || message ) {}
+		return actual;
 	},
-
-	'Check Flexo `test_join` is empty': function( callback ) {
-		console.log( 'Check Flexo `test_join` is empty' );
-
-		flexoContainer.test_join.find( {selector: {}}, {all: true, count: true}, function( error, data, count ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.length !== 0 || count !== 0 ) {
-				callback( new Error( 'Collection `test_join` isn\'t empty, clean it first' ) );
-				return;
-			}
-
-			callback( null, {data: data, count: count} );
-		} );
+	strictEqual: function( actual, expected, message ) {
+		if ( expected || message ) {}
+		return actual;
 	},
-
-	'Init View': function( callback ) {
-		console.log( 'Init View' );
-
-		try {
-			View = require( '../' );
-
-			View.init( {
-				views: { test: require( '../test.views/test' ) },
-				templatePath: __dirname + '/../test.templates/',
-				templateTimeout: 10 * 1000
-			}, function( error, result ) {
-				if ( error ) {
-					callback( error );
-					return;
-				}
-
-				callback( null, result );
-			} );
-		} catch ( e ) {
-			callback( e );
-		}
+	notStrictEqual: function( actual, expected, message ) {
+		if ( expected || message ) {}
+		return actual;
 	},
-
-	'Insert `test_join` part of view': function( callback ) {
-		console.log( 'Insert `test_join` part of view' );
-
-		View.ProcessRequest( 'test', 'insert', {queries: { test_join: [
-			{ name: rnd(), inn: rnd(), comment: rnd(), array_of_id: [rnd(), rnd(), rnd()]},
-			{ name: rnd(), inn: rnd(), comment: rnd(), array_of_id: [rnd(), rnd()]},
-			{ name: rnd(), inn: rnd(), comment: rnd(), array_of_id: [rnd()]}
-		]}}, flexoContainer, viewFields, {}, function( error, data ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test_join === undefined ) {
-				callback( new Error( 'No data returned' ) );
-				return;
-			}
-			if ( data.test_join.length !== 3 ) {
-				callback( new Error( 'Not all documents are saved' ) );
-				return;
-			}
-
-			try {
-				tj_ids = [data.test_join[0]._id, data.test_join[1]._id, data.test_join[2]._id];
-			} catch ( e ) {
-				callback( e );
-				return;
-			}
-
-			callback( null, tj_ids );
-		} );
+	throws: function( block, error, message ) {
+		if ( error || message ) {}
+		return block;
 	},
-
-	'Insert `test` part of view': function( callback ) {
-		console.log( 'Insert `test` part of view' );
-
-		View.ProcessRequest( 'test', 'insert', {queries: { test: [
-			{ name: rnd(), inn: rnd(), comment: rnd(), join_id: tj_ids[2], array_of_id: [tj_ids[2], tj_ids[1], tj_ids[0]]},
-			{ name: rnd(), inn: rnd(), comment: rnd(), join_id: tj_ids[1], array_of_id: [tj_ids[2], tj_ids[1]]},
-			{ name: rnd(), inn: rnd(), comment: rnd(), join_id: tj_ids[0], array_of_id: [tj_ids[2]]}
-		]}}, flexoContainer, viewFields, {}, function( error, data ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test === undefined ) {
-				callback( new Error( 'No data returned' ) );
-				return;
-			}
-			if ( data.test.length !== 3 ) {
-				callback( new Error( 'Not all documents are saved' ) );
-				return;
-			}
-
-			try {
-				t_ids = [data.test[0]._id, data.test[1]._id, data.test[2]._id];
-			} catch ( e ) {
-				callback( e );
-				return;
-			}
-
-			callback( null, t_ids );
-		} );
+	doesNotThrow: function( block, error, message ) {
+		if ( error || message ) {}
+		return block;
 	},
-
-	'Find inserted views': function( callback ) {
-		console.log( 'Find inserted views' );
-
-		View.ProcessRequest( 'test', 'find', { queries: {}, count: true }, flexoContainer, viewFields, {}, function( error, data, count ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test.length !== 3 || data.test_join.length !== 3 || count !== 3 ) {
-				callback( new Error( 'Not all documents were saved' ) );
-				return;
-			}
-
-			callback( null, {data: data, count: count} );
-		} );
-
-	},
-
-	'Find one view': function( callback ) {
-		console.log( 'Find one view' );
-
-		View.ProcessRequest( 'test', 'find', {queries: {test: {selector: {_id: t_ids[2]}}}, count: true}, flexoContainer, viewFields, {}, function( error, data, count ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test.length !== 1 || count !== 1 ) {
-				callback( new Error( 'Wrong amount of `test` documents' ) );
-				return;
-			}
-			if ( data.test_join.length !== 1 ) {
-				callback( new Error( 'Wrong amount of `test_join` documents' ) );
-				return;
-			}
-
-			callback( null, {data: data, count: count} );
-		} );
-	},
-
-	'Modify view': function( callback ) {
-		console.log( 'Modify view' );
-
-		View.ProcessRequest( 'test', 'modify', {queries: {test: {selector: {_id: t_ids[2]}, properties: {array_of_id: [tj_ids[1], tj_ids[2]]}}}}, flexoContainer, viewFields, {}, function( error, data ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test.length !== 1 ) {
-				callback( new Error( 'Wrong amount of modified `test` documents' ) );
-				return;
-			}
-
-			callback( null, data );
-		} );
-	},
-
-	'Check view modification': function( callback ) {
-		console.log( 'Check view modification' );
-
-		View.ProcessRequest( 'test', 'find', {queries: {test: {selector: {_id: t_ids[2]}}}, count: true}, flexoContainer, viewFields, {}, function( error, data, count ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test.length !== 1 || data.test_join.length !== 2 || count !== 1 ) {
-				callback( new Error( 'Wrong amount of documents' ) );
-				return;
-			}
-
-			callback( null, {data: data, count: count} );
-		} );
-	},
-
-	'Delete view': function( callback ) {
-		console.log( 'Delete view' );
-
-		View.ProcessRequest( 'test', 'delete', {queries: {test: {selector: {_id: t_ids[0]}}}}, flexoContainer, viewFields, {}, function( error, data ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test.length !== 1 ) {
-				callback( new Error( 'Wrong amount of deleted documents' ) );
-			}
-
-			callback( null, data );
-		} );
-	},
-
-	'Check view deletion': function( callback ) {
-		console.log( 'Check view deletion' );
-
-		View.ProcessRequest( 'test', 'find', {queries: {}, count: true}, flexoContainer, viewFields, {}, function( error, data, count ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( data.test.length !== 2 || data.test_join.length !== 2 ) {
-				callback( new Error( 'Wrong amount of deleted documents' ) );
-				return;
-			}
-
-			callback( null, {data: data, count: count} );
-		} );
-	},
-
-	'Get template': function( callback ) {
-		console.log( 'Get template' );
-
-		View.GetTemplate( 'test', {find: viewFields, insert: viewFields, modify: viewFields, delete: viewFields}, {}, function( error, template, config ) {
-			if ( error ) {
-				callback( error );
-				return;
-			}
-
-			if ( template === undefined ) {
-				callback( new Error( 'No template' ) );
-				return;
-			}
-			if ( config === undefined ) {
-				callback( new Error( 'No config' ) );
-				return;
-			}
-
-			callback( null, {template: template, config: config} );
-		} );
-	}
+	ifError: function( value ) { return value; },
+	done: function() { return true;}
 };
-
-async.series( tasks, function( error, results ) {
-	console.log( 'Результаты:', results );
-
-	if ( error ) {
-		console.log( 'Ошибка:', error );
-	} else {
-		console.log( 'Тест пройден' );
-	}
-
-	process.kill();
-} );
