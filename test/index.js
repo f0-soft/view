@@ -124,13 +124,11 @@ var view, viewConfig = {
 			},
 			aggr: {
 				'18': {
-					type: 'read',
-					aggregate: 'attachmentAggregation',
+					name: 'attachmentAggregation',
 					group: { $sum: '$date' }
 				},
 				'19': {
-					type: 'read',
-					aggregate: 'attachmentAggregation',
+					name: 'attachmentAggregation',
 					selector: 'tsCreate'
 				}
 			}

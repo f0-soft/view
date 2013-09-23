@@ -32,13 +32,17 @@ module.exports = {
 		// построчная агрегация
 		ag1: { _vid: '18', _flexo: {
 			type: 'read',
-			aggregate: 'attachmentAggregation',
-			group: { $sum: '$date' }
+			aggregate: {
+				name: 'attachmentAggregation',
+				group: { $sum: '$date' }
+			}
 		}},
 		ag2: { _vid: '19', _flexo: {
 			type: 'read',
-			aggregate: 'attachmentAggregation',
-			selector: 'tsCreate'
+			aggregate: {
+				name: 'attachmentAggregation',
+				selector: 'tsCreate'
+			}
 		}}
 	},
 
