@@ -29,16 +29,16 @@ module.exports = {
 		a16: { _vid: '16', _flexo: {type: 'read', scheme: [ 'testContract', 'index', 'attachment_id', 'bill-manager' ]} },
 		a17: { _vid: '17', _flexo: {type: 'read', scheme: [ 'testContract', 'customer_id', 'attachment_id', 'bill-manager' ]} },
 
-		// построчная аггрегация
-		ag1: { _vid: '19', _flexo: {
+		// построчная агрегация
+		ag1: { _vid: '18', _flexo: {
 			type: 'read',
 			aggregate: 'attachmentAggregation',
-			group: { $sum: 'remote_vid' }
+			group: { $sum: '$date' }
 		}},
-		ag2: { _vid: '20', _flexo: {
+		ag2: { _vid: '19', _flexo: {
 			type: 'read',
 			aggregate: 'attachmentAggregation',
-			selector: 'remote_vid'
+			selector: 'tsCreate'
 		}}
 	},
 
@@ -49,13 +49,11 @@ module.exports = {
 
 
 
-	// справочник аггрегаций
+	// справочник агрегаций
 	aggregate: {
 		attachmentAggregation: {
-			view: 'testAttachment',
-			link: { here: 'vid', there: 'vid' }, // makes separate requests by every id, so $group._id has requested id
-			selector: {}, // static selector
-			group: { sum: 'their_vid'}
+			flexo: 'testAttachment',
+			link: {contract_id: '%id%'} // makes separate requests by every id, so $group._id has requested id
 		}
 	},
 

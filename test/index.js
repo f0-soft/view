@@ -14,7 +14,7 @@
  */
 
 var mock;
-//mock = true;
+mock = true;
 //process.env.DEBUG = true;
 var log = function() {};
 if ( process.env.DEBUG ) { log = console.log; }
@@ -121,6 +121,18 @@ var view, viewConfig = {
 				'15': [ 'testContract', 'date', 'attachment_id', 'bill-contract' ],
 				'16': [ 'testContract', 'index', 'attachment_id', 'bill-contract' ],
 				'17': [ 'testContract', 'customer_id', 'attachment_id', 'bill-contract' ]
+			},
+			aggr: {
+				'18': {
+					type: 'read',
+					aggregate: 'attachmentAggregation',
+					group: { $sum: '$date' }
+				},
+				'19': {
+					type: 'read',
+					aggregate: 'attachmentAggregation',
+					selector: 'tsCreate'
+				}
 			}
 		}
 	},
@@ -139,7 +151,7 @@ var f2 = { scheme: 'testAttachment', fields: [ '_id', 'tsCreate', 'tsUpdate', 'd
 var f3 = { scheme: 'testContract', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id', '_path' ] };
 
 var name = 'test';
-var allVids = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17' ];
+var allVids = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18' ];
 var options = { insert_user_id: false, user_id: '1', role: 'manager' };
 
 var f1data = [];
@@ -164,6 +176,7 @@ exports['setUp'] = function( callback ) {
 
 				providerConfig.storage = {
 					find: Rabbit.find,
+					aggregate: Rabbit.aggregate,
 					insert: Rabbit.insert,
 					modify: Rabbit.modify,
 					delete: Rabbit.delete
@@ -337,7 +350,7 @@ exports['Insert `test` view documents'] = function( t ) {
 };
 
 exports['Find inserted `test` view documents'] = function( t ) {
-	t.expect( 9 );
+	t.expect( 10 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
 		t.ifError( err );
@@ -345,10 +358,11 @@ exports['Find inserted `test` view documents'] = function( t ) {
 		t.ok( data );
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 3 );
+			t.strictEqual( data.length, 4 );
 			t.strictEqual( data[0].length, 3 );
 			t.strictEqual( data[1].length, 6 );
 			t.strictEqual( data[2].length, 6 );
+			t.strictEqual( data[3].length, 3 );
 		} );
 		t.strictEqual( count, 3 );
 
@@ -377,7 +391,7 @@ exports['Modify `test` view document'] = function( t ) {
 };
 
 exports['Find modified `test` view documents'] = function( t ) {
-	t.expect( 12 );
+	t.expect( 13 );
 
 	view.find( name, allVids, { selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data, count ) {
 		t.ifError( err );
@@ -385,10 +399,11 @@ exports['Find modified `test` view documents'] = function( t ) {
 		t.ok( data );
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 3 );
+			t.strictEqual( data.length, 4 );
 			t.strictEqual( data[0].length, 1 );
 			t.strictEqual( data[1].length, 3 );
 			t.strictEqual( data[2].length, 3 );
+			t.strictEqual( data[3].length, 1 );
 			t.strictEqual( data[0][0]['01'], f1data[0]['01'] );
 			t.notStrictEqual( data[0][0]['03'], f1data[0]['03'] );
 			t.strictEqual( data[0][0]['04'], -999 );
@@ -418,7 +433,7 @@ exports['Delete `test` view docment'] = function( t ) {
 };
 
 exports['Find deleted `test` view document'] = function( t ) {
-	t.expect( 11 );
+	t.expect( 12 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
 		t.ifError( err );
@@ -426,10 +441,11 @@ exports['Find deleted `test` view document'] = function( t ) {
 		t.ok( data );
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 3 );
+			t.strictEqual( data.length, 4 );
 			t.strictEqual( data[0].length, 2 );
 			t.strictEqual( data[1].length, 3 );
 			t.strictEqual( data[2].length, 3 );
+			t.strictEqual( data[3].length, 2 );
 			t.notDeepEqual( data[0][0]['01'], f1data[1]['01'] );
 			t.notDeepEqual( data[0][1]['01'], f1data[1]['01'] );
 		} );
