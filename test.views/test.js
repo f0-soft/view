@@ -9,7 +9,7 @@ module.exports = {
 	// также он определяет какие поля схем, которые возможно присоединить через `from` или `link`, могут быть показаны
 	// срезанный по правам конфиг определяет какие поля следует показывать
 	config: {
-		a01: { _vid: '01', _flexo: {type: 'read', scheme: [ 'testBill', '_id' ]} },
+		a01: { a: 1, _vid: '01', _flexo: {type: 'read', scheme: [ 'testBill', '_id' ]}, _title: 'ID', _description: 'идентификатор счета' },
 		a02: { _vid: '02', _flexo: {type: 'read', scheme: [ 'testBill', 'tsCreate' ]} },
 		a03: { _vid: '03', _flexo: {type: 'read', scheme: [ 'testBill', 'tsUpdate' ]} },
 		a04: { _vid: '04', _flexo: {type: 'read', scheme: [ 'testBill', 'name' ]} },
