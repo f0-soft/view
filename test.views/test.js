@@ -15,12 +15,12 @@ module.exports = {
 		a04: { _vid: '04', _flexo: {type: 'read', scheme: [ 'testBill', 'name' ]} },
 		a05: { _vid: '05', _flexo: {type: 'read', scheme: [ 'testBill', 'attachment_id' ]} },
 
-		a06: { _vid: '06', _flexo: {type: 'read', scheme: [ 'testAttachment', '_id', 'attachment_id', 'bill-manager' ]} },
-		a07: { _vid: '07', _flexo: {type: 'read', scheme: [ 'testAttachment', 'tsCreate', 'attachment_id', 'bill-manager' ]} },
-		a08: { _vid: '08', _flexo: {type: 'read', scheme: [ 'testAttachment', 'tsUpdate', 'attachment_id', 'bill-manager' ]} },
-		a09: { _vid: '09', _flexo: {type: 'read', scheme: [ 'testAttachment', 'date', 'attachment_id', 'bill-manager' ]} },
-		a10: { _vid: '10', _flexo: {type: 'read', scheme: [ 'testAttachment', 'index', 'attachment_id', 'bill-manager' ]} },
-		a11: { _vid: '11', _flexo: {type: 'read', scheme: [ 'testAttachment', 'contract_id', 'attachment_id', 'bill-manager' ]} },
+		a06: { _vid: '06', _flexo: {type: 'read', scheme: [ 'testAttachment', '_id', 'attachment_id' ]} },
+		a07: { _vid: '07', _flexo: {type: 'read', scheme: [ 'testAttachment', 'tsCreate', 'attachment_id' ]} },
+		a08: { _vid: '08', _flexo: {type: 'read', scheme: [ 'testAttachment', 'tsUpdate', 'attachment_id' ]} },
+		a09: { _vid: '09', _flexo: {type: 'read', scheme: [ 'testAttachment', 'date', 'attachment_id' ]} },
+		a10: { _vid: '10', _flexo: {type: 'read', scheme: [ 'testAttachment', 'index', 'attachment_id' ]} },
+		a11: { _vid: '11', _flexo: {type: 'read', scheme: [ 'testAttachment', 'contract_id', 'attachment_id' ]} },
 
 		a12: { _vid: '12', _flexo: {type: 'read', scheme: [ 'testContract', '_id', 'attachment_id', 'bill-manager' ]} },
 		a13: { _vid: '13', _flexo: {type: 'read', scheme: [ 'testContract', 'tsCreate', 'attachment_id', 'bill-manager' ]} },
