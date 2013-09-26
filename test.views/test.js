@@ -28,16 +28,21 @@ module.exports = {
 		a15: { _vid: '15', _flexo: {type: 'read', scheme: [ 'testContract', 'date', 'attachment_id', 'bill-manager' ]} },
 		a16: { _vid: '16', _flexo: {type: 'read', scheme: [ 'testContract', 'index', 'attachment_id', 'bill-manager' ]} },
 		a17: { _vid: '17', _flexo: {type: 'read', scheme: [ 'testContract', 'customer_id', 'attachment_id', 'bill-manager' ]} },
+		a18: { _vid: '18', _flexo: {type: 'read', scheme: [ 'testCustomer', '_id', 'attachment_id', 'bill-contract' ]} },
+		a19: { _vid: '19', _flexo: {type: 'read', scheme: [ 'testCustomer', 'tsCreate', 'attachment_id', 'bill-contract' ]} },
+		a20: { _vid: '20', _flexo: {type: 'read', scheme: [ 'testCustomer', 'tsUpdate', 'attachment_id', 'bill-contract' ]} },
+		a21: { _vid: '21', _flexo: {type: 'read', scheme: [ 'testCustomer', 'name', 'attachment_id', 'bill-contract' ]} },
+		a22: { _vid: '22', _flexo: {type: 'read', scheme: [ 'testCustomer', 'manager_id', 'attachment_id', 'bill-contract' ]} },
 
 		// построчная агрегация
-		ag1: { _vid: '18', _flexo: {
+		ag1: { _vid: '23', _flexo: {
 			type: 'read',
 			aggregate: {
 				name: 'attachmentAggregation',
 				group: { $sum: '$date' }
 			}
 		}},
-		ag2: { _vid: '19', _flexo: {
+		ag2: { _vid: '24', _flexo: {
 			type: 'read',
 			aggregate: {
 				name: 'attachmentAggregation',

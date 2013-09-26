@@ -10,11 +10,11 @@
  nodeunit test/index.js
 
  Очистка mongo и redis: 
- mongo --eval 'db.testBill.remove(); db.testAttachment.remove(); db.testContract.remove();' && redis-cli FLUSHALL
+ mongo --eval 'db.dropDatabase();' && redis-cli FLUSHALL
  */
 
 var mock;
-mock = true;
+//mock = true;
 //process.env.DEBUG = true;
 var log = function() {};
 if ( process.env.DEBUG ) { log = console.log; }
@@ -29,7 +29,8 @@ var View = require( '../' );
 var storageConfig = {
 	gPath: {
 		'bill-contract': [
-			[ 'testContract', '_id' ],
+			[ 'testCustomer', '_id'],
+			[ 'testContract', 'customer_id' ],
 			[ 'testAttachment', 'contract_id' ]
 		]
 	},
@@ -45,7 +46,7 @@ var provider, providerConfig = {
 		testBill: {
 			scheme: require( '../node_modules/f0.flexo/test.schemes/testBill' ),
 			dict: {
-				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id', '_path' ],
+				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id' ],
 				mutable: [ 'date', 'attachment_id' ],
 				joinProperties: [],
 				joins: [],
@@ -54,15 +55,14 @@ var provider, providerConfig = {
 					tsCreate: { type: 'number' },
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
-					attachment_id: { type: 'array', of: 'id', from: 'testAttachment', link: 'bill-manager' },
-					_path: { type: 'array' }
+					attachment_id: { type: 'array', of: 'id', from: 'testAttachment', link: 'bill-manager' }
 				}
 			}
 		},
 		testAttachment: {
 			scheme: require( '../node_modules/f0.flexo/test.schemes/testAttachment' ),
 			dict: {
-				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id', '_path' ],
+				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id' ],
 				mutable: [ 'date', 'index', 'contract_id' ],
 				joinProperties: [],
 				joins: [],
@@ -72,15 +72,14 @@ var provider, providerConfig = {
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
 					index: { type: 'string' },
-					contract_id: { type: 'id', from: 'testContract', link: 'bill-manager' },
-					_path: { type: 'array' }
+					contract_id: { type: 'id', from: 'testContract', link: 'bill-manager' }
 				}
 			}
 		},
 		testContract: {
 			scheme: require( '../node_modules/f0.flexo/test.schemes/testContract' ),
 			dict: {
-				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id', '_path' ],
+				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id' ],
 				mutable: [ 'date', 'index', 'customer_id' ],
 				joinProperties: [],
 				joins: [],
@@ -90,8 +89,23 @@ var provider, providerConfig = {
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
 					index: { type: 'string' },
-					customer_id: { type: 'id', from: 'testCustomer', link: 'bill-manager' },
-					_path: { type: 'array' }
+					customer_id: { type: 'id', from: 'testCustomer', link: 'bill-manager' }
+				}
+			}
+		},
+		testCustomer: {
+			scheme: require( '../node_modules/f0.flexo/test.schemes/testCustomer' ),
+			dict: {
+				all: [ '_id', 'tsCreate', 'tsUpdate', 'name', 'manager_id' ],
+				mutable: [ 'name', 'manager_id' ],
+				joinProperties: [],
+				joins: [],
+				types: {
+					_id: { type: 'id' },
+					tsCreate: { type: 'number' },
+					tsUpdate: { type: 'number' },
+					name: { type: 'string' },
+					manager_id: { type: 'id', from: 'testManager', link: 'bill-manager' }
 				}
 			}
 		}
@@ -120,14 +134,19 @@ var view, viewConfig = {
 				'14': [ 'testContract', 'tsUpdate', 'attachment_id', 'bill-contract' ],
 				'15': [ 'testContract', 'date', 'attachment_id', 'bill-contract' ],
 				'16': [ 'testContract', 'index', 'attachment_id', 'bill-contract' ],
-				'17': [ 'testContract', 'customer_id', 'attachment_id', 'bill-contract' ]
+				'17': [ 'testContract', 'customer_id', 'attachment_id', 'bill-contract' ],
+				'18': [ 'testCustomer', '_id', 'attachment_id', 'bill-contract' ],
+				'19': [ 'testCustomer', 'tsCreate', 'attachment_id', 'bill-contract' ],
+				'20': [ 'testCustomer', 'tsUpdate', 'attachment_id', 'bill-contract' ],
+				'21': [ 'testCustomer', 'name', 'attachment_id', 'bill-contract' ],
+				'22': [ 'testCustomer', 'manager_id', 'attachment_id', 'bill-contract' ]
 			},
 			aggr: {
-				'18': {
+				'23': {
 					name: 'attachmentAggregation',
 					group: { $sum: '$date' }
 				},
-				'19': {
+				'24': {
 					name: 'attachmentAggregation',
 					selector: 'tsCreate'
 				}
@@ -136,7 +155,8 @@ var view, viewConfig = {
 	},
 	paths: {
 		'bill-contract': [
-			[ 'testContract', '_id' ],
+			[ 'testCustomer', '_id' ],
+			[ 'testContract', 'customer_id' ],
 			[ 'testAttachment', 'contract_id' ]
 		]
 	},
@@ -147,14 +167,16 @@ var view, viewConfig = {
 var f1 = { scheme: 'testBill', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id', '_path' ] };
 var f2 = { scheme: 'testAttachment', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id', '_path' ] };
 var f3 = { scheme: 'testContract', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id', '_path' ] };
+var f4 = { scheme: 'testCustomer', fields: [ '_id', 'tsCreate', 'tsUpdate', 'name', 'manager_id', '_path' ] };
 
 var name = 'test';
-var allVids = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18' ];
+var allVids = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24' ];
 var options = { insert_user_id: false, user_id: '1', role: 'manager' };
 
 var f1data = [];
 var f2data = [];
 var f3data = [];
+var f4data = [];
 
 function rnd( min, max ) {
 	return Math.floor( Math.random() * (max - min) + min );
@@ -223,14 +245,43 @@ exports['setUp'] = function( callback ) {
 				return cb();
 			} );
 		},
+		function( cb ) { // Check `testCustomer` is empty
+			provider.find( f4.scheme, f4.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+				if ( err ) { return cb( err ); }
+
+				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+
+				return cb();
+			} );
+		},
+		function( cb ) { // Insert test data into `testCustomer`
+			provider.insert( f4.scheme, f4.fields, [
+				{ name: rnd( 101, 200 ).toString(), manager_id: rnd( 1, 10 ).toString() },
+				{ name: rnd( 101, 200 ).toString(), manager_id: rnd( 1, 10 ).toString() },
+				{ name: rnd( 101, 200 ).toString(), manager_id: rnd( 1, 10 ).toString() }
+			], {}, function( err, data ) {
+				var i;
+
+				if ( err ) { return cb( err ); }
+
+				if ( data.length !== 3 ) { return cb( new Error( 'Couldn\'t insert test data into `testCustomer`' ) ); }
+
+				for ( i = 0; i < data.length; i += 1 ) {
+					f4data.push( {_id: data[i]._id, tsUpdate: data[i].tsUpdate} );
+				}
+
+				return cb();
+			} );
+		},
 		function( cb ) { // Insert test data into `testContract`
 			provider.insert( f3.scheme, f3.fields, [
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: rnd( 1, 10 ).toString() }
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[0]._id },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[1]._id },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[2]._id },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[0]._id },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[1]._id },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[2]._id }
 			], {}, function( err, data ) {
 				var i;
 
@@ -319,9 +370,9 @@ exports['Insert `test` view documents'] = function( t ) {
 	t.expect( 8 );
 
 	view.insert( name, allVids, [
-		{ '04': rnd( 1, 1000 ), '05': [ f2data[0]._id, f2data[2]._id, f2data[4]._id ] },
-		{ '04': rnd( 1, 1000 ), '05': [ f2data[1]._id, f2data[3]._id, f2data[5]._id ] },
-		{ '04': rnd( 1, 1000 ), '05': [ f2data[2]._id, f2data[4]._id, f2data[0]._id ] }
+		{ '04': rnd( 1, 1000 ), '05': [ f2data[0]._id, f2data[3]._id ] },
+		{ '04': rnd( 1, 1000 ), '05': [ f2data[1]._id, f2data[4]._id ] },
+		{ '04': rnd( 1, 1000 ), '05': [ f2data[2]._id, f2data[5]._id ] }
 	], options, function( err, data ) {
 		var i, dataVids = [];
 		t.ifError( err );
@@ -348,7 +399,7 @@ exports['Insert `test` view documents'] = function( t ) {
 };
 
 exports['Find inserted `test` view documents'] = function( t ) {
-	t.expect( 10 );
+	t.expect( 11 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
 		t.ifError( err );
@@ -356,11 +407,12 @@ exports['Find inserted `test` view documents'] = function( t ) {
 		t.ok( data );
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 4 );
+			t.strictEqual( data.length, 5 );
 			t.strictEqual( data[0].length, 3 );
 			t.strictEqual( data[1].length, 6 );
 			t.strictEqual( data[2].length, 6 );
 			t.strictEqual( data[3].length, 3 );
+			t.strictEqual( data[4].length, 3 );
 		} );
 		t.strictEqual( count, 3 );
 
@@ -389,7 +441,7 @@ exports['Modify `test` view document'] = function( t ) {
 };
 
 exports['Find modified `test` view documents'] = function( t ) {
-	t.expect( 13 );
+	t.expect( 14 );
 
 	view.find( name, allVids, { selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data, count ) {
 		t.ifError( err );
@@ -397,11 +449,12 @@ exports['Find modified `test` view documents'] = function( t ) {
 		t.ok( data );
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 4 );
+			t.strictEqual( data.length, 5 );
 			t.strictEqual( data[0].length, 1 );
-			t.strictEqual( data[1].length, 3 );
-			t.strictEqual( data[2].length, 3 );
+			t.strictEqual( data[1].length, 2 );
+			t.strictEqual( data[2].length, 2 );
 			t.strictEqual( data[3].length, 1 );
+			t.strictEqual( data[4].length, 1 );
 			t.strictEqual( data[0][0]['01'], f1data[0]['01'] );
 			t.notStrictEqual( data[0][0]['03'], f1data[0]['03'] );
 			t.strictEqual( data[0][0]['04'], -999 );
@@ -412,7 +465,7 @@ exports['Find modified `test` view documents'] = function( t ) {
 	} );
 };
 
-exports['Delete `test` view docment'] = function( t ) {
+exports['Delete `test` view document'] = function( t ) {
 	t.expect( 7 );
 
 	view.delete( name, [ f1data[1] ], options, function( err, data ) {
@@ -431,7 +484,7 @@ exports['Delete `test` view docment'] = function( t ) {
 };
 
 exports['Find deleted `test` view document'] = function( t ) {
-	t.expect( 12 );
+	t.expect( 13 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
 		t.ifError( err );
@@ -439,11 +492,12 @@ exports['Find deleted `test` view document'] = function( t ) {
 		t.ok( data );
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 4 );
+			t.strictEqual( data.length, 5 );
 			t.strictEqual( data[0].length, 2 );
-			t.strictEqual( data[1].length, 3 );
-			t.strictEqual( data[2].length, 3 );
+			t.strictEqual( data[1].length, 4 );
+			t.strictEqual( data[2].length, 4 );
 			t.strictEqual( data[3].length, 2 );
+			t.strictEqual( data[4].length, 2 );
 			t.notDeepEqual( data[0][0]['01'], f1data[1]['01'] );
 			t.notDeepEqual( data[0][1]['01'], f1data[1]['01'] );
 		} );
