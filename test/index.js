@@ -37,6 +37,9 @@ var storageConfig = {
 	gFieldDepPath: {
 		testBill: {
 			attachment_id: [ 'bill-contract', 'testAttachment' ]
+		},
+		testAttachment: {
+			contract_id: [ 'bill-contract', 'testContract' ]
 		}
 	}
 };
@@ -55,7 +58,7 @@ var provider, providerConfig = {
 					tsCreate: { type: 'number' },
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
-					attachment_id: { type: 'array', of: 'id', from: 'testAttachment', link: 'bill-manager' }
+					attachment_id: { type: 'array', of: 'id', from: 'testAttachment', link: 'bill-contract' }
 				}
 			}
 		},
@@ -72,7 +75,7 @@ var provider, providerConfig = {
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
 					index: { type: 'string' },
-					contract_id: { type: 'id', from: 'testContract', link: 'bill-manager' }
+					contract_id: { type: 'id', from: 'testContract', link: 'bill-contract' }
 				}
 			}
 		},
@@ -89,7 +92,7 @@ var provider, providerConfig = {
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
 					index: { type: 'string' },
-					customer_id: { type: 'id', from: 'testCustomer', link: 'bill-manager' }
+					customer_id: { type: 'id', from: 'testCustomer' }
 				}
 			}
 		},
@@ -105,7 +108,7 @@ var provider, providerConfig = {
 					tsCreate: { type: 'number' },
 					tsUpdate: { type: 'number' },
 					name: { type: 'string' },
-					manager_id: { type: 'id', from: 'testManager', link: 'bill-manager' }
+					manager_id: { type: 'id', from: 'testManager' }
 				}
 			}
 		}
@@ -319,8 +322,12 @@ exports['setUp'] = function( callback ) {
 			} );
 		}
 	], function( err ) {
+		if ( err ) {
+			return callback( err );
+		}
+
 		INIT = true;
-		return callback( err );
+		return callback();
 	} );
 };
 
