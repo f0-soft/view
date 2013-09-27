@@ -14,7 +14,7 @@
  */
 
 var mock;
-//mock = true;
+mock = true;
 //process.env.DEBUG = true;
 var log = function() {};
 if ( process.env.DEBUG ) { log = console.log; }
