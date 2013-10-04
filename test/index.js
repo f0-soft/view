@@ -126,18 +126,21 @@ var view, viewConfig = {
 				'03': [ 'testBill', 'tsUpdate' ],
 				'04': [ 'testBill', 'date' ],
 				'05': [ 'testBill', 'attachment_id' ],
+
 				'06': [ 'testAttachment', '_id', 'attachment_id' ],
 				'07': [ 'testAttachment', 'tsCreate', 'attachment_id' ],
 				'08': [ 'testAttachment', 'tsUpdate', 'attachment_id' ],
 				'09': [ 'testAttachment', 'date', 'attachment_id' ],
 				'10': [ 'testAttachment', 'index', 'attachment_id' ],
 				'11': [ 'testAttachment', 'contract_id', 'attachment_id' ],
+
 				'12': [ 'testContract', '_id', 'attachment_id', 'bill-contract' ],
 				'13': [ 'testContract', 'tsCreate', 'attachment_id', 'bill-contract' ],
 				'14': [ 'testContract', 'tsUpdate', 'attachment_id', 'bill-contract' ],
 				'15': [ 'testContract', 'date', 'attachment_id', 'bill-contract' ],
 				'16': [ 'testContract', 'index', 'attachment_id', 'bill-contract' ],
 				'17': [ 'testContract', 'customer_id', 'attachment_id', 'bill-contract' ],
+
 				'18': [ 'testCustomer', '_id', 'attachment_id', 'bill-contract' ],
 				'19': [ 'testCustomer', 'tsCreate', 'attachment_id', 'bill-contract' ],
 				'20': [ 'testCustomer', 'tsUpdate', 'attachment_id', 'bill-contract' ],
@@ -174,7 +177,7 @@ var f4 = { scheme: 'testCustomer', fields: [ '_id', 'tsCreate', 'tsUpdate', 'nam
 
 var name = 'test';
 var allVids = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24' ];
-var options = { insert_user_id: false, user_id: '1', role: 'manager' };
+var options = { company_id: '0', user_id: '1', role: '' };
 
 var f1data = [];
 var f2data = [];
@@ -357,7 +360,7 @@ exports['GetTemplate'] = function( t ) {
 };
 
 exports['Find empty'] = function( t ) {
-	t.expect( 6 );
+	t.expect( 8 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
 		t.ifError( err );
@@ -365,7 +368,9 @@ exports['Find empty'] = function( t ) {
 		t.ok( data );
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 0 );
+			t.strictEqual( data.length, 1 );
+			t.ok( data[0] );
+			t.ok( Array.isArray( data[0] ) );
 		} );
 		t.strictEqual( count, 0 );
 

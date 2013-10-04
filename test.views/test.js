@@ -10,10 +10,10 @@ module.exports = {
 	// срезанный по правам конфиг определяет какие поля следует показывать
 	config: [
 		1,
-		{ a: 1, b:{ a:1, c:[1,2]}, _vid: '01', _flexo: {type: 'read', scheme: [ 'testBill', '_id' ]}, _title: 'ID', _description: 'идентификатор счета' },
+		{ a: 1, b: { a: 1, c: [1, 2]}, _vid: '01', _flexo: {type: 'read', scheme: [ 'testBill', '_id' ]}, _title: 'ID', _description: 'идентификатор счета' },
 		{ _vid: '02', _flexo: {type: 'read', scheme: [ 'testBill', 'tsCreate' ]} },
 		{ _vid: '03', _flexo: {type: 'read', scheme: [ 'testBill', 'tsUpdate' ]} },
-		{ _vid: '04', _flexo: {type: 'read', scheme: [ 'testBill', 'name' ]} },
+		{ _vid: '04', _flexo: {type: 'read', scheme: [ 'testBill', 'date' ]} },
 		{ _vid: '05', _flexo: {type: 'read', scheme: [ 'testBill', 'attachment_id' ]} },
 
 		{ _vid: '06', _flexo: {type: 'read', scheme: [ 'testAttachment', '_id', 'attachment_id' ]} },
@@ -29,6 +29,7 @@ module.exports = {
 		{ _vid: '15', _flexo: {type: 'read', scheme: [ 'testContract', 'date', 'attachment_id', 'bill-manager' ]} },
 		{ _vid: '16', _flexo: {type: 'read', scheme: [ 'testContract', 'index', 'attachment_id', 'bill-manager' ]} },
 		{ _vid: '17', _flexo: {type: 'read', scheme: [ 'testContract', 'customer_id', 'attachment_id', 'bill-manager' ]} },
+
 		{ _vid: '18', _flexo: {type: 'read', scheme: [ 'testCustomer', '_id', 'attachment_id', 'bill-contract' ]} },
 		{ _vid: '19', _flexo: {type: 'read', scheme: [ 'testCustomer', 'tsCreate', 'attachment_id', 'bill-contract' ]} },
 		{ _vid: '20', _flexo: {type: 'read', scheme: [ 'testCustomer', 'tsUpdate', 'attachment_id', 'bill-contract' ]} },
@@ -69,8 +70,10 @@ module.exports = {
 
 
 
-	options: {
-		test_join: 'boolean'
+	access: {
+		'%role%': { /* %request% */ },
+		manager: {_path: {$elemMatch: {c: 'testCustomer', f: 'bill-contract', o: '%user_id%'}}},
+		customer: {_path: {$elemMatch: {c: 'testContract', f: 'bill-contract', o: '%company_id%'}}}
 	},
 
 
