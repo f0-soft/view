@@ -389,7 +389,7 @@ exports['GetTemplate'] = function( t ) {
 exports['Find empty'] = function( t ) {
 	t.expect( 8 );
 
-	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
+	view.find( name, allVids, {selector: {}, options: {count: true, sort: { '01': 1 }}}, options, function( err, data ) {
 		t.ifError( err );
 
 		t.ok( data );
