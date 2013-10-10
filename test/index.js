@@ -124,10 +124,18 @@ var provider, providerConfig = {
 var view, viewConfig = {
 	provider: undefined,
 	providerAlias: {
-		testBill: 'tb',
-		testAttachment: 'ta',
-		testContract: 'tc',
-		testCustomer: 'tr'
+		c2p: {
+			testBill: 'tb',
+			testAttachment: 'ta',
+			testContract: 'tc',
+			testCustomer: 'tr'
+		},
+		p2c: {
+			tb: 'testBill',
+			ta: 'testAttachment',
+			tc: 'testContract',
+			tr: 'testCustomer'
+		}
 	},
 	views: {
 		test: {
