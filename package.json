@@ -1,6 +1,6 @@
 {
 	"name": "f0.view",
-	"version": "0.2.18",
+	"version": "0.3.0",
 	"description": "View",
 	"license": "BSD",
 	"author": {
@@ -20,7 +20,7 @@
 
 	"main": "index.js",
 	"scripts": {
-		"test": "nodeunit test"
+		"test": "./node_modules/nodeunit/bin/nodeunit test/index.js"
 	},
 
 	"dependencies": {

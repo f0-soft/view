@@ -40,14 +40,14 @@ module.exports = {
 		{ _vid: '23', _flexo: {
 			type: 'read',
 			aggregate: {
-				name: 'attachmentAggregation',
-				group: { $sum: '$date' }
+				name: 'billsAggregation',
+				group: { $sum: 1 }
 			}
 		}},
 		{ _vid: '24', _flexo: {
 			type: 'read',
 			aggregate: {
-				name: 'attachmentAggregation',
+				name: 'billsAggregation',
 				selector: 'tsCreate'
 			}
 		}}
@@ -62,9 +62,9 @@ module.exports = {
 
 	// справочник агрегаций
 	aggregate: {
-		attachmentAggregation: {
-			flexo: 'testAttachment',
-			link: {contract_id: '%id%'} // makes separate requests by every id, so $group._id has requested id
+		billsAggregation: {
+			flexo: 'testBill',
+			link: {_id: '%id%'} // makes separate requests by every id, so $group._id has requested id
 		}
 	},
 
@@ -72,8 +72,8 @@ module.exports = {
 
 	access: {
 		'%role%': { /* %request% */ },
-		manager: {_path: {$elemMatch: {c: 'testCustomer', f: 'bill-contract', o: '%user_id%'}}},
-		customer: {_path: {$elemMatch: {c: 'testContract', f: 'bill-contract', o: '%company_id%'}}}
+		manager: {'bill-contract': '%user_id%'},
+		customer: {'bill-contract': '%company_id%'}
 	},
 
 

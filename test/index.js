@@ -41,6 +41,12 @@ var storageConfig = {
 		testAttachment: {
 			contract_id: [ 'bill-contract', 'testContract' ]
 		}
+	},
+	gPrefixCol: {
+		testBill: 'tb',
+		testAttachment: 'ta',
+		testContract: 'tc',
+		testCustomer: 'tr'
 	}
 };
 var provider, providerConfig = {
@@ -75,7 +81,7 @@ var provider, providerConfig = {
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
 					index: { type: 'string' },
-					contract_id: { type: 'id', from: 'testContract', link: 'bill-contract' }
+					contract_id: { type: 'array', of: 'id', from: 'testContract', link: 'bill-contract' }
 				}
 			}
 		},
@@ -92,7 +98,7 @@ var provider, providerConfig = {
 					tsUpdate: { type: 'number' },
 					date: { type: 'number' },
 					index: { type: 'string' },
-					customer_id: { type: 'id', from: 'testCustomer' }
+					customer_id: { type: 'array', of: 'id', from: 'testCustomer' }
 				}
 			}
 		},
@@ -108,7 +114,7 @@ var provider, providerConfig = {
 					tsCreate: { type: 'number' },
 					tsUpdate: { type: 'number' },
 					name: { type: 'string' },
-					manager_id: { type: 'id', from: 'testManager' }
+					manager_id: { type: 'array', of: 'id', from: 'testManager' }
 				}
 			}
 		}
@@ -117,6 +123,12 @@ var provider, providerConfig = {
 
 var view, viewConfig = {
 	provider: undefined,
+	providerAlias: {
+		testBill: 'tb',
+		testAttachment: 'ta',
+		testContract: 'tc',
+		testCustomer: 'tr'
+	},
 	views: {
 		test: {
 			view: require( '../test.views/test.js' ),
@@ -149,11 +161,11 @@ var view, viewConfig = {
 			},
 			aggr: {
 				'23': {
-					name: 'attachmentAggregation',
-					group: { $sum: '$date' }
+					name: 'billsAggregation',
+					group: { $sum: 1 }
 				},
 				'24': {
-					name: 'attachmentAggregation',
+					name: 'billsAggregation',
 					selector: 'tsCreate'
 				}
 			}
@@ -170,10 +182,10 @@ var view, viewConfig = {
 	templateTimeout: 100
 };
 
-var f1 = { scheme: 'testBill', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id', '_path' ] };
-var f2 = { scheme: 'testAttachment', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id', '_path' ] };
-var f3 = { scheme: 'testContract', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id', '_path' ] };
-var f4 = { scheme: 'testCustomer', fields: [ '_id', 'tsCreate', 'tsUpdate', 'name', 'manager_id', '_path' ] };
+var f1 = { scheme: 'testBill', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id' ] };
+var f2 = { scheme: 'testAttachment', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id' ] };
+var f3 = { scheme: 'testContract', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id' ] };
+var f4 = { scheme: 'testCustomer', fields: [ '_id', 'tsCreate', 'tsUpdate', 'name', 'manager_id' ] };
 
 var name = 'test';
 var allVids = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24' ];
@@ -212,61 +224,61 @@ exports['setUp'] = function( callback ) {
 			} );
 		},
 		function( cb ) { // init provider
-			Flexo.init( providerConfig, function( err, module ) {
+			Flexo.init( providerConfig, function( err, container ) {
 				if ( err ) { return cb( err ); }
 
-				viewConfig.provider = module;
-				provider = module;
+				viewConfig.provider = container;
+				provider = container;
 
 				return cb();
 			} );
 		},
 		function( cb ) { // Check `testBill` is empty
-			provider.find( f1.scheme, f1.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+			provider.find( {name: f1.scheme, fields: f1.fields, query: {}, options: {count: true}}, function( err, data ) {
 				if ( err ) { return cb( err ); }
 
-				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
-				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.result.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
 
 				return cb();
 			} );
 		},
 		function( cb ) { // Check `testAttachment` is empty
-			provider.find( f2.scheme, f2.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+			provider.find( {name: f2.scheme, fields: f2.fields, query: {}, options: {count: true}}, function( err, data ) {
 				if ( err ) { return cb( err ); }
 
-				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
-				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.result.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
 
 				return cb();
 			} );
 		},
 		function( cb ) { // Check `testContract` is empty
-			provider.find( f3.scheme, f3.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+			provider.find( {name: f3.scheme, fields: f3.fields, query: {}, options: {count: true}}, function( err, data ) {
 				if ( err ) { return cb( err ); }
 
-				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
-				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.result.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
 
 				return cb();
 			} );
 		},
 		function( cb ) { // Check `testCustomer` is empty
-			provider.find( f4.scheme, f4.fields, { selector: [] }, {count: true}, function( err, data, count ) {
+			provider.find( {name: f4.scheme, fields: f4.fields, query: {}, options: {count: true}}, function( err, data ) {
 				if ( err ) { return cb( err ); }
 
-				if ( data.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
-				if ( count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.result.length !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
+				if ( data.count !== 0 ) { return cb( new Error( 'Empty DB before test' ) ); }
 
 				return cb();
 			} );
 		},
 		function( cb ) { // Insert test data into `testCustomer`
-			provider.insert( f4.scheme, f4.fields, [
-				{ name: rnd( 101, 200 ).toString(), manager_id: rnd( 1, 10 ).toString() },
-				{ name: rnd( 101, 200 ).toString(), manager_id: rnd( 1, 10 ).toString() },
-				{ name: rnd( 101, 200 ).toString(), manager_id: rnd( 1, 10 ).toString() }
-			], {}, function( err, data ) {
+			provider.insert( {name: f4.scheme, fields: f4.fields, documents: [
+				{ name: rnd( 101, 200 ).toString(), manager_id: [rnd( 1, 10 ).toString()] },
+				{ name: rnd( 101, 200 ).toString(), manager_id: [rnd( 1, 10 ).toString()] },
+				{ name: rnd( 101, 200 ).toString(), manager_id: [rnd( 1, 10 ).toString()] }
+			], options: {}}, function( err, data ) {
 				var i;
 
 				if ( err ) { return cb( err ); }
@@ -281,14 +293,14 @@ exports['setUp'] = function( callback ) {
 			} );
 		},
 		function( cb ) { // Insert test data into `testContract`
-			provider.insert( f3.scheme, f3.fields, [
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[0]._id },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[1]._id },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[2]._id },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[0]._id },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[1]._id },
-				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: f4data[2]._id }
-			], {}, function( err, data ) {
+			provider.insert( {name: f3.scheme, fields: f3.fields, documents: [
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[0]._id] },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[1]._id] },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[2]._id] },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[0]._id] },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[1]._id] },
+				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[2]._id] }
+			], options: {}}, function( err, data ) {
 				var i;
 
 				if ( err ) { return cb( err ); }
@@ -303,14 +315,14 @@ exports['setUp'] = function( callback ) {
 			} );
 		},
 		function( cb ) { // Insert test data into `testAttachment`
-			provider.insert( f2.scheme, f2.fields, [
-				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[0]._id},
-				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[1]._id},
-				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[2]._id},
-				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[3]._id},
-				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[4]._id},
-				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: f3data[5]._id}
-			], {}, function( err, data ) {
+			provider.insert( {name: f2.scheme, fields: f2.fields, documents: [
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[0]._id]},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[1]._id]},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[2]._id]},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[3]._id]},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[4]._id]},
+				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[5]._id]}
+			], options: {}}, function( err, data ) {
 				var i;
 
 				if ( err ) { return cb( err ); }
@@ -362,17 +374,17 @@ exports['GetTemplate'] = function( t ) {
 exports['Find empty'] = function( t ) {
 	t.expect( 8 );
 
-	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
+	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
 
 		t.ok( data );
-		t.ok( Array.isArray( data ) );
+		t.strictEqual( typeof data, 'object' );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 1 );
-			t.ok( data[0] );
-			t.ok( Array.isArray( data[0] ) );
+			t.ok( data.result );
+			t.ok( Array.isArray( data.result ) );
+			t.strictEqual( data.result.length, 0 );
+			t.strictEqual( data.count, 0 );
 		} );
-		t.strictEqual( count, 0 );
 
 		t.done();
 	} );
@@ -411,22 +423,21 @@ exports['Insert `test` view documents'] = function( t ) {
 };
 
 exports['Find inserted `test` view documents'] = function( t ) {
-	t.expect( 11 );
+	t.expect( 10 );
 
-	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
+	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
 
 		t.ok( data );
-		t.ok( Array.isArray( data ) );
+		t.strictEqual( typeof data, 'object' );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 5 );
-			t.strictEqual( data[0].length, 3 );
-			t.strictEqual( data[1].length, 6 );
-			t.strictEqual( data[2].length, 6 );
-			t.strictEqual( data[3].length, 3 );
-			t.strictEqual( data[4].length, 3 );
+			t.ok( data.result );
+			t.strictEqual( data.count, 3 );
+			t.ok( Array.isArray( data.result ) );
+			t.strictEqual( data.result[0].length, 3 );
+			t.strictEqual( data.result[1].length, 15 );
+			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
 		} );
-		t.strictEqual( count, 3 );
 
 		t.done();
 	} );
@@ -453,25 +464,21 @@ exports['Modify `test` view document'] = function( t ) {
 };
 
 exports['Find modified `test` view documents'] = function( t ) {
-	t.expect( 14 );
+	t.expect( 10 );
 
-	view.find( name, allVids, { selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data, count ) {
+	view.find( name, allVids, {selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
 
 		t.ok( data );
-		t.ok( Array.isArray( data ) );
+		t.strictEqual( typeof data, 'object' );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 5 );
-			t.strictEqual( data[0].length, 1 );
-			t.strictEqual( data[1].length, 2 );
-			t.strictEqual( data[2].length, 2 );
-			t.strictEqual( data[3].length, 1 );
-			t.strictEqual( data[4].length, 1 );
-			t.strictEqual( data[0][0]['01'], f1data[0]['01'] );
-			t.notStrictEqual( data[0][0]['03'], f1data[0]['03'] );
-			t.strictEqual( data[0][0]['04'], -999 );
+			t.ok( data.result );
+			t.strictEqual( data.count, 1 );
+			t.ok( Array.isArray( data.result ) );
+			t.strictEqual( data.result[0].length, 1 );
+			t.strictEqual( data.result[1].length, 5 );
+			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
 		} );
-		t.strictEqual( count, 1 );
 
 		t.done();
 	} );
@@ -496,24 +503,21 @@ exports['Delete `test` view document'] = function( t ) {
 };
 
 exports['Find deleted `test` view document'] = function( t ) {
-	t.expect( 13 );
+	t.expect( 10 );
 
-	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data, count ) {
+	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
 
 		t.ok( data );
-		t.ok( Array.isArray( data ) );
+		t.strictEqual( typeof data, 'object' );
 		t.doesNotThrow( function() {
-			t.strictEqual( data.length, 5 );
-			t.strictEqual( data[0].length, 2 );
-			t.strictEqual( data[1].length, 4 );
-			t.strictEqual( data[2].length, 4 );
-			t.strictEqual( data[3].length, 2 );
-			t.strictEqual( data[4].length, 2 );
-			t.notDeepEqual( data[0][0]['01'], f1data[1]['01'] );
-			t.notDeepEqual( data[0][1]['01'], f1data[1]['01'] );
+			t.ok( data.result );
+			t.strictEqual( data.count, 2 );
+			t.ok( Array.isArray( data.result ) );
+			t.strictEqual( data.result[0].length, 2 );
+			t.strictEqual( data.result[1].length, 10 );
+			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
 		} );
-		t.strictEqual( count, 2 );
 
 		t.done();
 	} );
