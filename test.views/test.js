@@ -71,9 +71,18 @@ module.exports = {
 
 
 	access: {
-		'%role%': { /* %request% */ },
-		manager: {'bill-contract': '%user_id%'},
-		customer: {'bill-contract': '%company_id%'}
+		find: {
+			'%role%': { /* request */ },
+			manager: { 'bill-contract': '%user_id%' },
+			customer: { 'bill-contract': '%company_id%' }
+		},
+
+		insert: {
+			'*': { data: { /* request */ } },
+			boss: { data: {'bill-contract': '%user_id%'}, lazy: true },
+			manager: { data: {'bill-contract': '%user_id%'} },
+			customer: { data: {'bill-contract': '%company_id%'} }
+		}
 	},
 
 

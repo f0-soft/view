@@ -387,7 +387,7 @@ exports['GetTemplate'] = function( t ) {
 };
 
 exports['Find empty'] = function( t ) {
-	t.expect( 8 );
+	t.expect( 10 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true, sort: { '01': 1 }}}, options, function( err, data ) {
 		t.ifError( err );
@@ -397,7 +397,9 @@ exports['Find empty'] = function( t ) {
 		t.doesNotThrow( function() {
 			t.ok( data.result );
 			t.ok( Array.isArray( data.result ) );
-			t.strictEqual( data.result.length, 0 );
+			t.strictEqual( data.result.length, 2 );
+			t.strictEqual( data.result[0].length, 0 );
+			t.strictEqual( data.result[1].length, 0 );
 			t.strictEqual( data.count, 0 );
 		} );
 
@@ -438,7 +440,7 @@ exports['Insert `test` view documents'] = function( t ) {
 };
 
 exports['Find inserted `test` view documents'] = function( t ) {
-	t.expect( 10 );
+	t.expect( 11 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
@@ -449,6 +451,7 @@ exports['Find inserted `test` view documents'] = function( t ) {
 			t.ok( data.result );
 			t.strictEqual( data.count, 3 );
 			t.ok( Array.isArray( data.result ) );
+			t.strictEqual( data.result.length, 2 );
 			t.strictEqual( data.result[0].length, 3 );
 			t.strictEqual( data.result[1].length, 15 );
 			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
@@ -479,7 +482,7 @@ exports['Modify `test` view document'] = function( t ) {
 };
 
 exports['Find modified `test` view documents'] = function( t ) {
-	t.expect( 10 );
+	t.expect( 11 );
 
 	view.find( name, allVids, {selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
@@ -490,6 +493,7 @@ exports['Find modified `test` view documents'] = function( t ) {
 			t.ok( data.result );
 			t.strictEqual( data.count, 1 );
 			t.ok( Array.isArray( data.result ) );
+			t.strictEqual( data.result.length, 2 );
 			t.strictEqual( data.result[0].length, 1 );
 			t.strictEqual( data.result[1].length, 5 );
 			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
@@ -518,7 +522,7 @@ exports['Delete `test` view document'] = function( t ) {
 };
 
 exports['Find deleted `test` view document'] = function( t ) {
-	t.expect( 10 );
+	t.expect( 11 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
@@ -529,6 +533,7 @@ exports['Find deleted `test` view document'] = function( t ) {
 			t.ok( data.result );
 			t.strictEqual( data.count, 2 );
 			t.ok( Array.isArray( data.result ) );
+			t.strictEqual( data.result.length, 2 );
 			t.strictEqual( data.result[0].length, 2 );
 			t.strictEqual( data.result[1].length, 10 );
 			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
