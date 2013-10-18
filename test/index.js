@@ -68,10 +68,10 @@ var provider, providerConfig = {
 				joins: [],
 				types: {
 					_id: { type: 'id' },
-					tsCreate: { type: 'number' },
-					tsUpdate: { type: 'number' },
-					date: { type: 'number' },
-					attachment_id: { type: 'array', of: 'id', from: 'testAttachment', link: 'bill-contract' }
+					tsCreate: { type: 'int' },
+					tsUpdate: { type: 'int' },
+					date: { type: 'int' },
+					attachment_id: { type: 'idpath', from: 'testAttachment', link: 'bill-contract' }
 				}
 			}
 		},
@@ -84,11 +84,11 @@ var provider, providerConfig = {
 				joins: [],
 				types: {
 					_id: { type: 'id' },
-					tsCreate: { type: 'number' },
-					tsUpdate: { type: 'number' },
-					date: { type: 'number' },
-					index: { type: 'string' },
-					contract_id: { type: 'array', of: 'id', from: 'testContract', link: 'bill-contract' }
+					tsCreate: { type: 'int' },
+					tsUpdate: { type: 'int' },
+					date: { type: 'int' },
+					index: { type: 'str' },
+					contract_id: { type: 'idpath', from: 'testContract', link: 'bill-contract' }
 				}
 			}
 		},
@@ -101,11 +101,11 @@ var provider, providerConfig = {
 				joins: [],
 				types: {
 					_id: { type: 'id' },
-					tsCreate: { type: 'number' },
-					tsUpdate: { type: 'number' },
-					date: { type: 'number' },
-					index: { type: 'string' },
-					customer_id: { type: 'array', of: 'id', from: 'testCustomer' }
+					tsCreate: { type: 'int' },
+					tsUpdate: { type: 'int' },
+					date: { type: 'int' },
+					index: { type: 'str' },
+					customer_id: { type: 'idpath', from: 'testCustomer', link: 'bill-contract' }
 				}
 			}
 		},
@@ -118,10 +118,10 @@ var provider, providerConfig = {
 				joins: [],
 				types: {
 					_id: { type: 'id' },
-					tsCreate: { type: 'number' },
-					tsUpdate: { type: 'number' },
-					name: { type: 'string' },
-					manager_id: { type: 'array', of: 'id', from: 'testManager' }
+					tsCreate: { type: 'int' },
+					tsUpdate: { type: 'int' },
+					name: { type: 'str' },
+					manager_id: { type: 'idpath', from: 'testManager' }
 				}
 			}
 		}
@@ -212,7 +212,7 @@ var f3data = [];
 var f4data = [];
 
 function rnd( min, max ) {
-	return Math.floor( Math.random() * (max - min) + min );
+	return parseInt( Math.random() * 10000 ).toString( 10 );
 }
 
 
@@ -289,7 +289,7 @@ exports['setUp'] = function( callback ) {
 			} );
 		},
 		function( cb ) { // Insert test data into `testCustomer`
-			provider.insert( {name: f4.scheme, fields: f4.fields, documents: [
+			provider.insert( {name: f4.scheme, fields: f4.fields, query: [
 				{ name: rnd( 101, 200 ).toString(), manager_id: [rnd( 1, 10 ).toString()] },
 				{ name: rnd( 101, 200 ).toString(), manager_id: [rnd( 1, 10 ).toString()] },
 				{ name: rnd( 101, 200 ).toString(), manager_id: [rnd( 1, 10 ).toString()] }
@@ -308,7 +308,7 @@ exports['setUp'] = function( callback ) {
 			} );
 		},
 		function( cb ) { // Insert test data into `testContract`
-			provider.insert( {name: f3.scheme, fields: f3.fields, documents: [
+			provider.insert( {name: f3.scheme, fields: f3.fields, query: [
 				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[0]._id] },
 				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[1]._id] },
 				{ date: rnd( 1, 1000 ), index: rnd( 101, 200 ).toString(), customer_id: [f4data[2]._id] },
@@ -330,7 +330,7 @@ exports['setUp'] = function( callback ) {
 			} );
 		},
 		function( cb ) { // Insert test data into `testAttachment`
-			provider.insert( {name: f2.scheme, fields: f2.fields, documents: [
+			provider.insert( {name: f2.scheme, fields: f2.fields, query: [
 				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[0]._id]},
 				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[1]._id]},
 				{ date: rnd( 1, 1000 ), index: rnd( 201, 300 ).toString(), contract_id: [f3data[2]._id]},
