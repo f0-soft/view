@@ -105,7 +105,7 @@ var provider, providerConfig = {
 					tsUpdate: { type: 'int' },
 					date: { type: 'int' },
 					index: { type: 'str' },
-					customer_id: { type: 'idpath', from: 'testCustomer', link: 'bill-contract' }
+					customer_id: { type: 'id', from: 'testCustomer' }
 				}
 			}
 		},
@@ -121,7 +121,7 @@ var provider, providerConfig = {
 					tsCreate: { type: 'int' },
 					tsUpdate: { type: 'int' },
 					name: { type: 'str' },
-					manager_id: { type: 'idpath', from: 'testManager' }
+					manager_id: { type: 'id' }
 				}
 			}
 		}
