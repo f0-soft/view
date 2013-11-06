@@ -27,6 +27,20 @@ var Flexo = require( 'f0.flexo' );
 var View = require( '../' );
 
 var storageConfig = {
+	gPrefixCol: {
+		c2p: {
+			testBill: 'tb',
+			testAttachment: 'ta',
+			testContract: 'tc',
+			testCustomer: 'tr'
+		},
+		p2c: {
+			tb: 'testBill',
+			ta: 'testAttachment',
+			tc: 'testContract',
+			tr: 'testCustomer'
+		}
+	},
 	gPath: {
 		'bill-contract': [
 			[ 'testCustomer', '_id'],
@@ -42,20 +56,20 @@ var storageConfig = {
 			contract_id: [ 'bill-contract', 'testContract' ]
 		}
 	},
-	gPrefixCol: {
-		c2p: {
-			testBill: 'tb',
-			testAttachment: 'ta',
-			testContract: 'tc',
-			testCustomer: 'tr'
-		},
-		p2c: {
-			tb: 'testBill',
-			ta: 'testAttachment',
-			tc: 'testContract',
-			tr: 'testCustomer'
-		}
-	}};
+	gBackRef: {
+		testCustomer: [ 'testContract', 'customer_id' ],
+		testContract: [ 'testAttachment', 'contract_id' ],
+		testAttachment: [ 'testBill', 'attachment_id' ]
+	},
+	gScore: {},
+	gScoreJoin: {},
+	gArrayFields: {
+		testBill: { attachment_id: 1 },
+		testAttachment: { contract_id: 1 },
+		testContract: { customer_id: 1 },
+		testCustomer: { }
+	}
+};
 var provider, providerConfig = {
 	storage: undefined,
 	schemes: {
@@ -67,11 +81,11 @@ var provider, providerConfig = {
 				joinProperties: [],
 				joins: [],
 				types: {
-					_id: { type: 'id' },
+					_id: { type: '_id' },
 					tsCreate: { type: 'int' },
 					tsUpdate: { type: 'int' },
 					date: { type: 'int' },
-					attachment_id: { type: 'idpath', from: 'testAttachment', link: 'bill-contract' }
+					attachment_id: { type: 'id', from: 'testAttachment', link: 'bill-contract' }
 				}
 			}
 		},
@@ -83,12 +97,12 @@ var provider, providerConfig = {
 				joinProperties: [],
 				joins: [],
 				types: {
-					_id: { type: 'id' },
+					_id: { type: '_id' },
 					tsCreate: { type: 'int' },
 					tsUpdate: { type: 'int' },
 					date: { type: 'int' },
 					index: { type: 'str' },
-					contract_id: { type: 'idpath', from: 'testContract', link: 'bill-contract' }
+					contract_id: { type: 'id', from: 'testContract', link: 'bill-contract' }
 				}
 			}
 		},
@@ -100,7 +114,7 @@ var provider, providerConfig = {
 				joinProperties: [],
 				joins: [],
 				types: {
-					_id: { type: 'id' },
+					_id: { type: '_id' },
 					tsCreate: { type: 'int' },
 					tsUpdate: { type: 'int' },
 					date: { type: 'int' },
@@ -117,7 +131,7 @@ var provider, providerConfig = {
 				joinProperties: [],
 				joins: [],
 				types: {
-					_id: { type: 'id' },
+					_id: { type: '_id' },
 					tsCreate: { type: 'int' },
 					tsUpdate: { type: 'int' },
 					name: { type: 'str' },
@@ -363,6 +377,7 @@ exports['setUp'] = function( callback ) {
 
 
 exports['Init View'] = function( t ) {
+	catchAll( t );
 	t.expect( 1 );
 
 	View.init( viewConfig, function( err, module ) {
@@ -373,6 +388,7 @@ exports['Init View'] = function( t ) {
 };
 
 exports['GetTemplate'] = function( t ) {
+	catchAll( t );
 	t.expect( 4 );
 
 	view.getTemplate( name, allVids, function( err, vids, config, template ) {
@@ -387,6 +403,7 @@ exports['GetTemplate'] = function( t ) {
 };
 
 exports['Find empty'] = function( t ) {
+	catchAll( t );
 	t.expect( 10 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true, sort: { '01': 1 }}}, options, function( err, data ) {
@@ -408,6 +425,7 @@ exports['Find empty'] = function( t ) {
 };
 
 exports['Insert `test` view documents'] = function( t ) {
+	catchAll( t );
 	t.expect( 8 );
 
 	view.insert( name, allVids, [
@@ -440,6 +458,7 @@ exports['Insert `test` view documents'] = function( t ) {
 };
 
 exports['Find inserted `test` view documents'] = function( t ) {
+	catchAll( t );
 	t.expect( 11 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
@@ -462,6 +481,7 @@ exports['Find inserted `test` view documents'] = function( t ) {
 };
 
 exports['Modify `test` view document'] = function( t ) {
+	catchAll( t );
 	t.expect( 6 );
 
 	view.modify( name, [
@@ -482,6 +502,7 @@ exports['Modify `test` view document'] = function( t ) {
 };
 
 exports['Find modified `test` view documents'] = function( t ) {
+	catchAll( t );
 	t.expect( 11 );
 
 	view.find( name, allVids, {selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data ) {
@@ -504,6 +525,7 @@ exports['Find modified `test` view documents'] = function( t ) {
 };
 
 exports['Delete `test` view document'] = function( t ) {
+	catchAll( t );
 	t.expect( 7 );
 
 	view.delete( name, [ f1data[1] ], options, function( err, data ) {
@@ -522,6 +544,7 @@ exports['Delete `test` view document'] = function( t ) {
 };
 
 exports['Find deleted `test` view document'] = function( t ) {
+	catchAll( t );
 	t.expect( 11 );
 
 	view.find( name, allVids, {selector: {}, options: {count: true}}, options, function( err, data ) {
@@ -581,3 +604,8 @@ var t = {
 	ifError: function( value ) { return value; },
 	done: function() { return true;}
 };
+
+function catchAll( test ) {
+	process.removeAllListeners( 'uncaughtException' );
+	process.on( 'uncaughtException', test.done );
+}
