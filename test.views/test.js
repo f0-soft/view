@@ -41,7 +41,7 @@ module.exports = {
 			type: 'read',
 			aggregate: {
 				name: 'billsAggregation',
-				group: { $sum: 1 }
+				group: { $sum: '$_id' }
 			}
 		}},
 		{ _vid: '24', _flexo: {

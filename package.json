@@ -1,6 +1,6 @@
 {
 	"name": "f0.view",
-	"version": "0.3.11",
+	"version": "0.3.12",
 	"description": "View",
 	"license": "BSD",
 	"author": {
@@ -30,7 +30,7 @@
 	},
 	"devDependencies": {
 		"nodeunit": "",
-		"f0.rabbit": "git+ssh://git@github.com:f0-soft/rabbit.git",
-		"f0.flexo": "git+ssh://git@github.com:f0-soft/flexo.git"
+		"underscore": "",
+		"f0.starter": "git+ssh://git@github.com:f0-soft/starter.git"
 	}
 }

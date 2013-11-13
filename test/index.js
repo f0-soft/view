@@ -22,194 +22,32 @@ if ( process.env.DEBUG ) { log = console.log; }
 var async = require( 'async' );
 var INIT;
 
-var Rabbit = mock ? require( '../node_modules/f0.flexo/mock/storage' ) : require( 'f0.rabbit' );
-var Flexo = require( 'f0.flexo' );
+var Starter = require( 'f0.starter' );
+var _ = require( 'underscore' );
 var View = require( '../' );
 
-var storageConfig = {
-	gPrefixCol: {
-		c2p: {
+var starterConfig = _.extend(
+	{}, // empty 
+	Starter.config, // initial config 
+	require( './../node_modules/f0.starter/mock' ), // mocks
+	{
+		rabbit: mock ? require( './../node_modules/f0.starter/node_modules/f0.flexo/mock/storage' ) : require( './../node_modules/f0.starter/node_modules/f0.rabbit/' ),
+		flexo: require( './../node_modules/f0.starter/node_modules/f0.flexo/' ),
+		view: require( '../' ),
+		flexo_path: __dirname + '/../node_modules/f0.starter/node_modules/f0.flexo/test.schemes',
+		link_path: __dirname + '/../node_modules/f0.starter/node_modules/f0.flexo/test.links',
+		view_path: __dirname + '/../test.views',
+		template_path: __dirname + '/../test.templates',
+		collection_alias: {
 			testBill: 'tb',
 			testAttachment: 'ta',
 			testContract: 'tc',
 			testCustomer: 'tr'
-		},
-		p2c: {
-			tb: 'testBill',
-			ta: 'testAttachment',
-			tc: 'testContract',
-			tr: 'testCustomer'
-		}
-	},
-	gPath: {
-		'bill-contract': [
-			[ 'testCustomer', '_id'],
-			[ 'testContract', 'customer_id' ],
-			[ 'testAttachment', 'contract_id' ]
-		]
-	},
-	gFieldDepPath: {
-		testBill: {
-			attachment_id: [ 'bill-contract', 'testAttachment' ]
-		},
-		testAttachment: {
-			contract_id: [ 'bill-contract', 'testContract' ]
-		}
-	},
-	gBackRef: {
-		testCustomer: [ 'testContract', 'customer_id' ],
-		testContract: [ 'testAttachment', 'contract_id' ],
-		testAttachment: [ 'testBill', 'attachment_id' ]
-	},
-	gScore: {},
-	gScoreJoin: {},
-	gArrayFields: {
-		testBill: { attachment_id: 1 },
-		testAttachment: { contract_id: 1 },
-		testContract: { customer_id: 1 },
-		testCustomer: { }
-	}
-};
-var provider, providerConfig = {
-	storage: undefined,
-	schemes: {
-		testBill: {
-			scheme: require( '../node_modules/f0.flexo/test.schemes/testBill' ),
-			dict: {
-				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id' ],
-				mutable: [ 'date', 'attachment_id' ],
-				joinProperties: [],
-				joins: [],
-				types: {
-					_id: { type: '_id' },
-					tsCreate: { type: 'int' },
-					tsUpdate: { type: 'int' },
-					date: { type: 'int' },
-					attachment_id: { type: 'id', from: 'testAttachment', link: 'bill-contract' }
-				}
-			}
-		},
-		testAttachment: {
-			scheme: require( '../node_modules/f0.flexo/test.schemes/testAttachment' ),
-			dict: {
-				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id' ],
-				mutable: [ 'date', 'index', 'contract_id' ],
-				joinProperties: [],
-				joins: [],
-				types: {
-					_id: { type: '_id' },
-					tsCreate: { type: 'int' },
-					tsUpdate: { type: 'int' },
-					date: { type: 'int' },
-					index: { type: 'str' },
-					contract_id: { type: 'id', from: 'testContract', link: 'bill-contract' }
-				}
-			}
-		},
-		testContract: {
-			scheme: require( '../node_modules/f0.flexo/test.schemes/testContract' ),
-			dict: {
-				all: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'customer_id' ],
-				mutable: [ 'date', 'index', 'customer_id' ],
-				joinProperties: [],
-				joins: [],
-				types: {
-					_id: { type: '_id' },
-					tsCreate: { type: 'int' },
-					tsUpdate: { type: 'int' },
-					date: { type: 'int' },
-					index: { type: 'str' },
-					customer_id: { type: 'id', from: 'testCustomer' }
-				}
-			}
-		},
-		testCustomer: {
-			scheme: require( '../node_modules/f0.flexo/test.schemes/testCustomer' ),
-			dict: {
-				all: [ '_id', 'tsCreate', 'tsUpdate', 'name', 'manager_id' ],
-				mutable: [ 'name', 'manager_id' ],
-				joinProperties: [],
-				joins: [],
-				types: {
-					_id: { type: '_id' },
-					tsCreate: { type: 'int' },
-					tsUpdate: { type: 'int' },
-					name: { type: 'str' },
-					manager_id: { type: 'id' }
-				}
-			}
 		}
 	}
-};
+);
 
-var view, viewConfig = {
-	provider: undefined,
-	providerAlias: {
-		c2p: {
-			testBill: 'tb',
-			testAttachment: 'ta',
-			testContract: 'tc',
-			testCustomer: 'tr'
-		},
-		p2c: {
-			tb: 'testBill',
-			ta: 'testAttachment',
-			tc: 'testContract',
-			tr: 'testCustomer'
-		}
-	},
-	views: {
-		test: {
-			view: require( '../test.views/test.js' ),
-			vids: {
-				'01': [ 'testBill', '_id' ],
-				'02': [ 'testBill', 'tsCreate' ],
-				'03': [ 'testBill', 'tsUpdate' ],
-				'04': [ 'testBill', 'date' ],
-				'05': [ 'testBill', 'attachment_id' ],
-
-				'06': [ 'testAttachment', '_id', 'attachment_id' ],
-				'07': [ 'testAttachment', 'tsCreate', 'attachment_id' ],
-				'08': [ 'testAttachment', 'tsUpdate', 'attachment_id' ],
-				'09': [ 'testAttachment', 'date', 'attachment_id' ],
-				'10': [ 'testAttachment', 'index', 'attachment_id' ],
-				'11': [ 'testAttachment', 'contract_id', 'attachment_id' ],
-
-				'12': [ 'testContract', '_id', 'attachment_id', 'bill-contract' ],
-				'13': [ 'testContract', 'tsCreate', 'attachment_id', 'bill-contract' ],
-				'14': [ 'testContract', 'tsUpdate', 'attachment_id', 'bill-contract' ],
-				'15': [ 'testContract', 'date', 'attachment_id', 'bill-contract' ],
-				'16': [ 'testContract', 'index', 'attachment_id', 'bill-contract' ],
-				'17': [ 'testContract', 'customer_id', 'attachment_id', 'bill-contract' ],
-
-				'18': [ 'testCustomer', '_id', 'attachment_id', 'bill-contract' ],
-				'19': [ 'testCustomer', 'tsCreate', 'attachment_id', 'bill-contract' ],
-				'20': [ 'testCustomer', 'tsUpdate', 'attachment_id', 'bill-contract' ],
-				'21': [ 'testCustomer', 'name', 'attachment_id', 'bill-contract' ],
-				'22': [ 'testCustomer', 'manager_id', 'attachment_id', 'bill-contract' ]
-			},
-			aggr: {
-				'23': {
-					name: 'billsAggregation',
-					group: { $sum: 1 }
-				},
-				'24': {
-					name: 'billsAggregation',
-					selector: 'tsCreate'
-				}
-			}
-		}
-	},
-	paths: {
-		'bill-contract': [
-			[ 'testCustomer', '_id' ],
-			[ 'testContract', 'customer_id' ],
-			[ 'testAttachment', 'contract_id' ]
-		]
-	},
-	templatePath: __dirname + '/../test.templates/',
-	templateTimeout: 100
-};
+var provider, view;
 
 var f1 = { scheme: 'testBill', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'attachment_id' ] };
 var f2 = { scheme: 'testAttachment', fields: [ '_id', 'tsCreate', 'tsUpdate', 'date', 'index', 'contract_id' ] };
@@ -238,26 +76,11 @@ exports['setUp'] = function( callback ) {
 
 	return async.series( [
 		function( cb ) { // init storage
-			Rabbit.init( storageConfig, function( err ) {
-				if ( err ) { return cb( err ); }
+			Starter.init( starterConfig, function( err, c, all ) {
+				if ( err ) { return console.log( err ); }
 
-				providerConfig.storage = {
-					find: Rabbit.find,
-					aggregate: Rabbit.aggregate,
-					insert: Rabbit.insert,
-					modify: Rabbit.modify,
-					delete: Rabbit.delete
-				};
-
-				return cb();
-			} );
-		},
-		function( cb ) { // init provider
-			Flexo.init( providerConfig, function( err, container ) {
-				if ( err ) { return cb( err ); }
-
-				viewConfig.provider = container;
-				provider = container;
+				provider = all.flexo;
+				view = all.view;
 
 				return cb();
 			} );
@@ -375,17 +198,6 @@ exports['setUp'] = function( callback ) {
 	} );
 };
 
-
-exports['Init View'] = function( t ) {
-	catchAll( t );
-	t.expect( 1 );
-
-	View.init( viewConfig, function( err, module ) {
-		t.ifError( err );
-		view = module;
-		t.done();
-	} );
-};
 
 exports['GetTemplate'] = function( t ) {
 	catchAll( t );
