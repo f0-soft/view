@@ -29,15 +29,17 @@ var View = require( '../' );
 var starterConfig = _.extend(
 	{}, // empty 
 	Starter.config, // initial config 
-	require( './../node_modules/f0.starter/mock' ), // mocks
 	{
-		rabbit: mock ? require( './../node_modules/f0.starter/node_modules/f0.flexo/mock/storage' ) : require( './../node_modules/f0.starter/node_modules/f0.rabbit/' ),
-		flexo: require( './../node_modules/f0.starter/node_modules/f0.flexo/' ),
+		// rabbit - starter
+		// flexo - starter
 		view: require( '../' ),
+		controller: Starter.mock.controller,
+
 		flexo_path: __dirname + '/../node_modules/f0.starter/node_modules/f0.flexo/test.schemes',
 		link_path: __dirname + '/../node_modules/f0.starter/node_modules/f0.flexo/test.links',
 		view_path: __dirname + '/../test.views',
 		template_path: __dirname + '/../test.templates',
+		
 		collection_alias: {
 			testBill: 'tb',
 			testAttachment: 'ta',
@@ -46,6 +48,7 @@ var starterConfig = _.extend(
 		}
 	}
 );
+if ( mock ) { starterConfig.rabbit = Starter.mock.rabbit; }
 
 var provider, view;
 
