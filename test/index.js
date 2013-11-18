@@ -14,7 +14,7 @@
  */
 
 var mock;
-mock = true;
+//mock = true;
 //process.env.DEBUG = true;
 var log = function() {};
 if ( process.env.DEBUG ) { log = console.log; }
@@ -138,10 +138,10 @@ exports['setUp'] = function( callback ) {
 
 				if ( err ) { return cb( err ); }
 
-				if ( data.length !== 3 ) { return cb( new Error( 'Couldn\'t insert test data into `testCustomer`' ) ); }
+				if ( data.result.length !== 3 ) { return cb( new Error( 'Couldn\'t insert test data into `testCustomer`' ) ); }
 
-				for ( i = 0; i < data.length; i += 1 ) {
-					f4data.push( {_id: data[i]._id, tsUpdate: data[i].tsUpdate} );
+				for ( i = 0; i < data.result.length; i += 1 ) {
+					f4data.push( {_id: data.result[i]._id, tsUpdate: data.result[i].tsUpdate} );
 				}
 
 				return cb();
@@ -160,10 +160,10 @@ exports['setUp'] = function( callback ) {
 
 				if ( err ) { return cb( err ); }
 
-				if ( data.length !== 6 ) { return cb( new Error( 'Couldn\'t insert test data into `testContract`' ) ); }
+				if ( data.result.length !== 6 ) { return cb( new Error( 'Couldn\'t insert test data into `testContract`' ) ); }
 
-				for ( i = 0; i < data.length; i += 1 ) {
-					f3data.push( {_id: data[i]._id, tsUpdate: data[i].tsUpdate} );
+				for ( i = 0; i < data.result.length; i += 1 ) {
+					f3data.push( {_id: data.result[i]._id, tsUpdate: data.result[i].tsUpdate} );
 				}
 
 				return cb();
@@ -182,10 +182,10 @@ exports['setUp'] = function( callback ) {
 
 				if ( err ) { return cb( err ); }
 
-				if ( data.length !== 6 ) { return cb( new Error( 'Couldn\'t insert test data into `testAttachment`' ) ); }
+				if ( data.result.length !== 6 ) { return cb( new Error( 'Couldn\'t insert test data into `testAttachment`' ) ); }
 
-				for ( i = 0; i < data.length; i += 1 ) {
-					f2data.push( { _id: data[i]._id, tsUpdate: data[i].tsUpdate } );
+				for ( i = 0; i < data.result.length; i += 1 ) {
+					f2data.push( { _id: data.result[i]._id, tsUpdate: data.result[i].tsUpdate } );
 				}
 
 				return cb();
