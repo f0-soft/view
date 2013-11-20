@@ -30,6 +30,7 @@ var starterConfig = _.extend(
 	{}, // empty 
 	Starter.config, // initial config 
 	{
+		// rabbit-server - starter
 		// rabbit - starter
 		// flexo - starter
 		view: require( '../' ),
@@ -39,7 +40,7 @@ var starterConfig = _.extend(
 		link_path: __dirname + '/../node_modules/f0.starter/node_modules/f0.flexo/test.links',
 		view_path: __dirname + '/../test.views',
 		template_path: __dirname + '/../test.templates',
-		
+
 		collection_alias: {
 			testBill: 'tb',
 			testAttachment: 'ta',
@@ -48,7 +49,10 @@ var starterConfig = _.extend(
 		}
 	}
 );
-if ( mock ) { starterConfig.rabbit = Starter.mock.rabbit; }
+if ( mock ) {
+	starterConfig['rabbit-server'] = Starter.mock['rabbit-server'];
+	starterConfig.rabbit = Starter.mock.rabbit;
+}
 
 var provider, view;
 
@@ -244,7 +248,7 @@ exports['Insert `test` view documents'] = function( t ) {
 	t.expect( 8 );
 
 	view.insert( name, allVids, [
-		{ '04': rnd( 1, 1000 ), '05': [ f2data[0]._id, f2data[3]._id ] },
+		{ '04': rnd( 1, 1000 ), '05': [] },
 		{ '04': rnd( 1, 1000 ), '05': [ f2data[1]._id, f2data[4]._id ] },
 		{ '04': rnd( 1, 1000 ), '05': [ f2data[2]._id, f2data[5]._id ] }
 	], options, function( err, data ) {
@@ -287,7 +291,7 @@ exports['Find inserted `test` view documents'] = function( t ) {
 			t.ok( Array.isArray( data.result ) );
 			t.strictEqual( data.result.length, 2 );
 			t.strictEqual( data.result[0].length, 3 );
-			t.strictEqual( data.result[1].length, 15 );
+			t.strictEqual( data.result[1].length, 13 );
 			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
 		} );
 
@@ -300,7 +304,7 @@ exports['Modify `test` view document'] = function( t ) {
 	t.expect( 6 );
 
 	view.modify( name, [
-		{ selector: f1data[0], properties: {'04': -999}}
+		{ selector: f1data[1], properties: {'04': -999}}
 	], options, function( err, data ) {
 		t.ifError( err );
 
@@ -309,7 +313,7 @@ exports['Modify `test` view document'] = function( t ) {
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
 			t.strictEqual( data.length, 1 );
-			t.notStrictEqual( data[0]['03'], f1data[0]['03'] );
+			t.notStrictEqual( data[0]['03'], f1data[1]['03'] );
 		} );
 
 		t.done();
@@ -320,7 +324,7 @@ exports['Find modified `test` view documents'] = function( t ) {
 	catchAll( t );
 	t.expect( 11 );
 
-	view.find( name, allVids, {selector: {test: {'01': f1data[0]['01']}}, options: {count: true}}, options, function( err, data ) {
+	view.find( name, allVids, {selector: {test: {'01': f1data[1]['01']}}, options: {count: true}}, options, function( err, data ) {
 		t.ifError( err );
 
 		t.ok( data );
@@ -343,7 +347,7 @@ exports['Delete `test` view document'] = function( t ) {
 	catchAll( t );
 	t.expect( 7 );
 
-	view.delete( name, [ f1data[1] ], options, function( err, data ) {
+	view.delete( name, [ f1data[2] ], options, function( err, data ) {
 		t.ifError( err );
 
 		t.ok( data );
@@ -351,7 +355,7 @@ exports['Delete `test` view document'] = function( t ) {
 		t.doesNotThrow( function() {
 			t.strictEqual( data.length, 1 );
 			t.ok( data[0] );
-			t.strictEqual( data[0]['01'], f1data[1]['01'] );
+			t.strictEqual( data[0]['01'], f1data[2]['01'] );
 		} );
 
 		t.done();
@@ -373,7 +377,7 @@ exports['Find deleted `test` view document'] = function( t ) {
 			t.ok( Array.isArray( data.result ) );
 			t.strictEqual( data.result.length, 2 );
 			t.strictEqual( data.result[0].length, 2 );
-			t.strictEqual( data.result[1].length, 10 );
+			t.strictEqual( data.result[1].length, 8 );
 			t.strictEqual( Object.keys( data.result[0][0] ).length, 7 );
 		} );
 
