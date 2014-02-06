@@ -31,6 +31,6 @@
 	"devDependencies": {
 		"nodeunit": "",
 		"underscore": "",
-		"f0.starter": "git+ssh://git@github.com:f0-soft/starter.git"
+		"f0.starter": "git+ssh://git@github.com:f0-soft/starter.git#dev"
 	}
 }
