@@ -9,6 +9,7 @@ exports.name = 'mock';
 
 
 // перечень методов, которые должны быть доступны через универсальный клиент
+// может быть пустым
 exports.subscribe = {
 	edit: true
 };
@@ -16,9 +17,9 @@ exports.subscribe = {
 
 
 // функция запуска клиента
-// индивидуальна для каждого сервиса на всякий случай
+// индивидуальна для каждого сервиса
 exports.init = function( cb ) {
-	var lib = require( './../test.client/MockServiceClient' );
+	var lib = require( './../test.client/MockClient' );
 
 	lib.init( {
 		host: 'localhost',
@@ -28,3 +29,15 @@ exports.init = function( cb ) {
 		return cb( null, client );
 	} );
 };
+
+
+
+var check = [
+	['config', true, 'o', [
+		['name', true, 's'],
+		['subscribe', true, 'o', [
+			'*', false, 'b'
+		]],
+		['init', true, 'f']
+	]]
+];
