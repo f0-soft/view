@@ -26,7 +26,8 @@
 	"dependencies": {
 		"dot": "",
 		"async": "",
-		"f0.argstype": "git+ssh://git@github.com:f0-soft/argstype.git"
+		"f0.argstype": "git+ssh://git@github.com:f0-soft/argstype.git",
+		"traverse": ""
 	},
 	"devDependencies": {
 		"nodeunit": "",
