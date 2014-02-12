@@ -58,7 +58,7 @@ exports.config = [
 			data: { // источник данных
 				type: 'read',
 				service: 'flexo', // optional
-				method: { find: 'specialFind' }, // optional, partial
+				methods: { find: 'specialFind' }, // optional, partial
 				source: [ 'table', 'field', 'parentField' ]
 			},
 			title: 'qwe', // название
