@@ -52,15 +52,22 @@ exports.config = [
 	{ _vid: '21', _flexo: {type: 'read', scheme: [ 'testCustomer', 'name', 'attachment_id', 'bill-contract' ]} },
 	{ _vid: '22', _flexo: {type: 'read', scheme: [ 'testCustomer', 'manager_id', 'attachment_id', 'bill-contract' ]} },
 
-	{
-		_vid: 'new',
-		_data: {
-			type: 'read',
-			service: 'flexo', // optional
-			method: { find: 'specialFind' }, // optional, partial
-			source: [ 'table', 'field', 'parentField' ]
-		}
-	},
+	{ // узел
+		_vid: { // присвоение viewId
+			id: 'new', // id
+			data: { // источник данных
+				type: 'read',
+				service: 'flexo', // optional
+				method: { find: 'specialFind' }, // optional, partial
+				source: [ 'table', 'field', 'parentField' ]
+			},
+			title: 'qwe', // название
+			description: 'asd' // описание
+		},
+		// основные данные узла
+		a: 1,
+		b: { a: 1, c: [1, 2]}
+	}, // такая структура снижает вероятность коллизии с данными, уменьшает количество операций при фильтрации объекта
 
 	// построчная агрегация
 	{ _vid: '23', _flexo: {
