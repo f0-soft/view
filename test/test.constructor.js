@@ -1,19 +1,19 @@
 'use strict';
 
-var Proxy, proxy;
+var Connector, connector;
 var Provider, provider;
 var View, view;
 
-exports['Proxy'] = function( t ) {
+exports['Connector'] = function( t ) {
 	catchAll( t );
 	t.expect( 2 );
 
 	t.doesNotThrow( function() {
-		Proxy = require( '../lib/view/proxy' );
+		Connector = require( '../lib/view/connector' );
 	} );
 
 	t.doesNotThrow( function() {
-		proxy = new Proxy( [] );
+		connector = new Connector( [] );
 	} );
 
 	t.done();
@@ -29,7 +29,7 @@ exports['Provider'] = function( t ) {
 	} );
 
 	t.doesNotThrow( function() {
-		provider = new Provider( { proxy: proxy } );
+		provider = new Provider( { connector: connector } );
 	} );
 
 	t.done();
