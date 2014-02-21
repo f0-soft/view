@@ -209,7 +209,7 @@ exports['insert'] = function( t ) {
 
 exports['modify'] = function( t ) {
 	catchAll( t );
-	t.expect( 6 );
+	t.expect( 5 );
 
 	view.modify( {
 		name: NAME,
@@ -223,8 +223,7 @@ exports['modify'] = function( t ) {
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
 			t.strictEqual( data.length, 1 );
-			t.strictEqual( data[0].c, '-999' );
-			docIdUpdate = {id: data[0]._id, up: data[0].tsUpdate};
+			docIdUpdate = data[0];
 		} );
 
 		t.done();
