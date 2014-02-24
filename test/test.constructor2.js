@@ -200,7 +200,7 @@ exports['insert'] = function( t ) {
 		t.ok( Array.isArray( data ) );
 		t.doesNotThrow( function() {
 			t.strictEqual( data.length, 3 );
-			docIdUpdate = {id: data[0]._id, up: data[0].tsUpdate};
+			docIdUpdate = data[0];
 		} );
 
 		t.done();
@@ -262,10 +262,10 @@ exports['find remaining'] = function( t ) {
 		access: ACCESS
 	}, function( err, res ) {
 		t.ifError( err );
-		t.strictEqual( res.length, 2 );
+		t.strictEqual( res.data.length, 2 );
 		docIdUpdate = [
-			{id: res[0]._id, up: res[0].tsUpdate},
-			{id: res[1]._id, up: res[1].tsUpdate}
+			{id: res.data[0][0]._id, up: res.data[0][0].tsUpdate},
+			{id: res.data[0][1]._id, up: res.data[0][1].tsUpdate}
 		];
 		t.done();
 	} );
