@@ -22,6 +22,22 @@ exports.methods = { // optional
 	}
 };
 
+//exports.data = {
+//	scheme: 'testBill',
+//	fields: ['_id', 'tsUpdae', 'tsCreate', 'date', 'attachment_id'],
+//	join: {
+//		attachment_id: {
+//			scheme: 'testAttachments',
+//			fields: ['_id', 'tsUpdate', 'tsCreate', 'date', 'index']
+//		}
+//	}
+//};
+//exports.config = [
+//	{ _vid: 'id' },
+//	{ _vid: 'up' }
+//	
+//];
+
 // конфиг определяет какие поля данных от сервисов могут быть показаны
 // срезанный по правам конфиг определяет какие поля следует показывать
 exports.config = [
